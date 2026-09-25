@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/primitives";
 import { useAuthStore } from "@/stores/auth-store";
+import { BillingSection } from "./billing-section";
 import { DangerZone } from "./danger-zone";
 import { NotificationsSection } from "./notifications-section";
 import { PersonalSection } from "./personal-section";
@@ -12,6 +13,7 @@ import { SecuritySection } from "./security-section";
 const SECTIONS = [
   ["dados", "Dados pessoais"],
   ["preferencias", "Preferências"],
+  ["cobranca", "Plano e cobrança"],
   ["notificacoes", "Notificações"],
   ["seguranca", "Segurança"],
   ["excluir", "Excluir conta"],
@@ -40,6 +42,8 @@ export function ProfileView() {
         <PersonalSection user={user} />
         <Separator />
         <PreferencesSection user={user} />
+        <Separator />
+        <BillingSection />
         <Separator />
         <NotificationsSection user={user} />
         <Separator />

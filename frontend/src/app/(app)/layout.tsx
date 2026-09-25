@@ -2,14 +2,18 @@ import type { Metadata } from "next";
 import type { ReactNode } from "react";
 import { AppShell } from "@/components/layout/app-shell";
 import { SessionGate } from "@/features/auth/components/session-gate";
+import { BillingGate } from "@/features/billing/components/billing-gate";
 
-// Área privada: nunca indexada. proxy.ts filtra sem sessão; o JwtAuthGuard da API é a barreira real.
+// Área privada: nunca indexada. proxy.ts filtra sem sessão; o JwtAuthGuard/SubscriptionGuard
+// da API são a barreira real — SessionGate e BillingGate aqui são só UX.
 export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
     <SessionGate>
-      <AppShell>{children}</AppShell>
+      <BillingGate>
+        <AppShell>{children}</AppShell>
+      </BillingGate>
     </SessionGate>
   );
 }

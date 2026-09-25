@@ -19,6 +19,7 @@ const USER_MESSAGES: Record<string, string> = {
   CONFLICT: "Já existe um registro com esses dados.",
   RATE_LIMITED: "Muitas tentativas em pouco tempo. Aguarde um instante.",
   INTERNAL_ERROR: "Algo deu errado do nosso lado. Tente novamente em instantes.",
+  SUBSCRIPTION_REQUIRED: "Seu período de teste acabou. Assine para continuar usando o Lastro.",
 };
 
 /** Códigos cuja mensagem da API é mais específica (ex.: minutos restantes do bloqueio). */
