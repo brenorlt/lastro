@@ -1,0 +1,847 @@
+// Lastro — schema relacional completo (fase de arquitetura).
+// Convenções: ids UUID, colunas snake_case via @map, dinheiro em Decimal(18,2),
+// quantidades/preços de investimento em Decimal(24,8), timestamps em timestamptz.
+
+generator client {
+  provider               = "prisma-client"
+  output                 = "../src/generated/prisma"
+  moduleFormat           = "esm"
+  importFileExtension    = "js"
+  generatedFileExtension = "ts"
+  previewFeatures        = ["postgresqlExtensions", "partialIndexes"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  extensions = [pgcrypto, citext, pg_trgm]
+}
+
+// ───────────────────────────── Enums ─────────────────────────────
+
+enum Theme {
+  SYSTEM
+  LIGHT
+  DARK
+
+  @@map("theme")
+}
+
+enum VerificationTokenType {
+  EMAIL_VERIFICATION
+  PASSWORD_RESET
+
+  @@map("verification_token_type")
+}
+
+enum AccountType {
+  CHECKING
+  SAVINGS
+  DIGITAL
+  WALLET
+  INVESTMENT
+  OTHER
+
+  @@map("account_type")
+}
+
+enum AccountStatus {
+  ACTIVE
+  ARCHIVED
+
+  @@map("account_status")
+}
+
+enum CardBrand {
+  VISA
+  MASTERCARD
+  ELO
+  AMEX
+  HIPERCARD
+  OTHER
+
+  @@map("card_brand")
+}
+
+enum CardStatus {
+  ACTIVE
+  BLOCKED
+  ARCHIVED
+
+  @@map("card_status")
+}
+
+enum InvoiceStatus {
+  OPEN
+  CLOSED
+  PAID
+  OVERDUE
+
+  @@map("invoice_status")
+}
+
+enum CategoryType {
+  INCOME
+  EXPENSE
+
+  @@map("category_type")
+}
+
+enum TransactionType {
+  INCOME
+  EXPENSE
+  TRANSFER
+
+  @@map("transaction_type")
+}
+
+enum TransactionStatus {
+  PENDING
+  CLEARED
+  SCHEDULED
+
+  @@map("transaction_status")
+}
+
+enum RecurrenceFrequency {
+  DAILY
+  WEEKLY
+  MONTHLY
+  YEARLY
+
+  @@map("recurrence_frequency")
+}
+
+enum GoalPriority {
+  LOW
+  MEDIUM
+  HIGH
+
+  @@map("goal_priority")
+}
+
+enum GoalCategory {
+  VEHICLE
+  REAL_ESTATE
+  TRAVEL
+  EMERGENCY
+  RETIREMENT
+  FINANCIAL_INDEPENDENCE
+  EQUIPMENT
+  EDUCATION
+  OTHER
+
+  @@map("goal_category")
+}
+
+enum GoalStatus {
+  ACTIVE
+  COMPLETED
+  PAUSED
+  ARCHIVED
+
+  @@map("goal_status")
+}
+
+enum InvestmentType {
+  FIXED_INCOME
+  TREASURY
+  CDB
+  LCI_LCA
+  FUNDS
+  STOCKS
+  ETFS
+  REITS
+  CRYPTO
+  PENSION
+  OTHER
+
+  @@map("investment_type")
+}
+
+enum InvestmentLiquidity {
+  DAILY
+  ON_MATURITY
+  D_PLUS_X
+  OTHER
+
+  @@map("investment_liquidity")
+}
+
+enum InvestmentTransactionType {
+  BUY
+  SELL
+  DIVIDEND
+  INTEREST
+  FEE
+  VALUATION
+
+  @@map("investment_transaction_type")
+}
+
+enum AssetType {
+  REAL_ESTATE
+  VEHICLE
+  CASH
+  OTHER
+
+  @@map("asset_type")
+}
+
+enum LiabilityType {
+  LOAN
+  FINANCING
+  CREDIT_CARD
+  DEBT
+  OTHER
+
+  @@map("liability_type")
+}
+
+enum NotificationType {
+  BILL_DUE
+  INVOICE_DUE
+  GOAL_BEHIND
+  BUDGET_EXCEEDED
+  BUDGET_THRESHOLD
+  EMERGENCY_BELOW_TARGET
+  NEW_TRANSACTION
+  RECURRING_CREATED
+  SECURITY
+  GOAL_COMPLETED
+  WEEKLY_SUMMARY
+
+  @@map("notification_type")
+}
+
+enum SecurityEventType {
+  LOGIN_SUCCESS
+  LOGIN_FAILED
+  LOGOUT
+  PASSWORD_CHANGED
+  SESSION_REVOKED
+  ACCOUNT_DELETED
+  REFRESH_REUSE_DETECTED
+
+  @@map("security_event_type")
+}
+
+// ───────────────────────── Identidade / Auth ─────────────────────────
+
+model User {
+  id                    String    @id @default(uuid()) @db.Uuid
+  email                 String    @unique @db.Citext
+  passwordHash          String    @map("password_hash")
+  name                  String    @db.VarChar(120)
+  phone                 String?   @db.VarChar(32)
+  avatarUrl             String?   @map("avatar_url")
+  emailVerifiedAt       DateTime? @map("email_verified_at") @db.Timestamptz(3)
+  currency              String    @default("BRL") @db.Char(3)
+  locale                String    @default("pt-BR") @db.VarChar(10)
+  timezone              String    @default("America/Sao_Paulo") @db.VarChar(64)
+  theme                 Theme     @default(SYSTEM)
+  notificationPrefs     Json      @default("{}") @map("notification_prefs")
+  onboardingCompletedAt DateTime? @map("onboarding_completed_at") @db.Timestamptz(3)
+  // Respostas brutas do onboarding (renda, gastos, categorias principais) para insights.
+  onboardingAnswers     Json?     @map("onboarding_answers")
+  // Premissas do planejamento (horizonte, retorno, crescimento…). null = padrões.
+  planningAssumptions   Json?     @map("planning_assumptions")
+  failedLoginAttempts   Int       @default(0) @map("failed_login_attempts")
+  // Quantos bloqueios consecutivos já ocorreram (duração dobra a cada novo bloqueio).
+  lockoutCount          Int       @default(0) @map("lockout_count")
+  lockedUntil           DateTime? @map("locked_until") @db.Timestamptz(3)
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  sessions               Session[]
+  verificationTokens     VerificationToken[]
+  accounts               Account[]
+  creditCards            CreditCard[]
+  creditCardInvoices     CreditCardInvoice[]
+  categories             Category[]
+  tags                   Tag[]
+  transactions           Transaction[]
+  recurringTransactions  RecurringTransaction[]
+  budgets                Budget[]
+  goals                  Goal[]
+  goalContributions      GoalContribution[]
+  emergencyFund          EmergencyFund?
+  investments            Investment[]
+  investmentTransactions InvestmentTransaction[]
+  assets                 Asset[]
+  liabilities            Liability[]
+  notifications          Notification[]
+  financialSnapshots     FinancialSnapshot[]
+  securityEvents         SecurityEvent[]
+  liabilityPayments      LiabilityPayment[]
+
+  @@index([deletedAt])
+  @@map("users")
+}
+
+model Session {
+  id               String    @id @default(uuid()) @db.Uuid
+  userId           String    @map("user_id") @db.Uuid
+  refreshTokenHash String    @unique @map("refresh_token_hash")
+  // Todas as sessões derivadas de um mesmo login compartilham o familyId;
+  // reuso de refresh token revogado invalida a família inteira.
+  familyId         String    @map("family_id") @db.Uuid
+  userAgent        String?   @map("user_agent") @db.VarChar(512)
+  ip               String?   @db.VarChar(64)
+  expiresAt        DateTime  @map("expires_at") @db.Timestamptz(3)
+  revokedAt        DateTime? @map("revoked_at") @db.Timestamptz(3)
+  lastUsedAt       DateTime? @map("last_used_at") @db.Timestamptz(3)
+  replacedById     String?   @unique @map("replaced_by_id") @db.Uuid
+  createdAt        DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  replacedBy Session? @relation("SessionRotation", fields: [replacedById], references: [id], onDelete: SetNull)
+  replaces   Session? @relation("SessionRotation")
+
+  @@index([userId, revokedAt])
+  @@index([familyId])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+model VerificationToken {
+  id        String                @id @default(uuid()) @db.Uuid
+  userId    String                @map("user_id") @db.Uuid
+  type      VerificationTokenType
+  tokenHash String                @unique @map("token_hash")
+  expiresAt DateTime              @map("expires_at") @db.Timestamptz(3)
+  usedAt    DateTime?             @map("used_at") @db.Timestamptz(3)
+  createdAt DateTime              @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([expiresAt])
+  @@map("verification_tokens")
+}
+
+model SecurityEvent {
+  id        String            @id @default(uuid()) @db.Uuid
+  // Opcional: tentativas de login com e-mail inexistente não têm usuário.
+  userId    String?           @map("user_id") @db.Uuid
+  type      SecurityEventType
+  email     String?           @db.Citext
+  ip        String?           @db.VarChar(64)
+  userAgent String?           @map("user_agent") @db.VarChar(512)
+  metadata  Json              @default("{}")
+  createdAt DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, createdAt])
+  @@index([type, createdAt])
+  @@index([ip, createdAt])
+  @@map("security_events")
+}
+
+// ───────────────────────── Contas e cartões ─────────────────────────
+
+model Account {
+  id                String        @id @default(uuid()) @db.Uuid
+  userId            String        @map("user_id") @db.Uuid
+  name              String        @db.Citext
+  institution       String?       @db.VarChar(80)
+  type              AccountType
+  initialBalance    Decimal       @default(0) @map("initial_balance") @db.Decimal(18, 2)
+  currentBalance    Decimal       @default(0) @map("current_balance") @db.Decimal(18, 2)
+  color             String?       @db.VarChar(9)
+  icon              String?       @db.VarChar(64)
+  status            AccountStatus @default(ACTIVE)
+  includeInNetWorth Boolean       @default(true) @map("include_in_net_worth")
+  createdAt         DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt         DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt         DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  user                      User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions              Transaction[]           @relation("TransactionAccount")
+  incomingTransfers         Transaction[]           @relation("TransactionTransferAccount")
+  recurringTransactions     RecurringTransaction[]  @relation("RecurringAccount")
+  recurringIncomingTransfer RecurringTransaction[]  @relation("RecurringTransferAccount")
+  paymentForCards           CreditCard[]
+  goalContributions         GoalContribution[]
+  emergencyFunds            EmergencyFund[]
+  investments               Investment[]
+  investmentTransactions    InvestmentTransaction[]
+  liabilityPayments         LiabilityPayment[]
+
+  // Nome único (case-insensitive via citext) entre contas ativas não excluídas.
+  @@unique([userId, name], map: "accounts_user_active_name_key", where: raw("status = 'ACTIVE' AND deleted_at IS NULL"))
+  @@index([userId, status])
+  @@index([userId, deletedAt])
+  @@map("accounts")
+}
+
+model CreditCard {
+  id               String     @id @default(uuid()) @db.Uuid
+  userId           String     @map("user_id") @db.Uuid
+  name             String     @db.Citext
+  institution      String?    @db.VarChar(80)
+  brand            CardBrand  @default(OTHER)
+  limit            Decimal    @map("credit_limit") @db.Decimal(18, 2)
+  closingDay       Int        @map("closing_day") @db.SmallInt // 1-31, validado na aplicação
+  dueDay           Int        @map("due_day") @db.SmallInt // 1-31, validado na aplicação
+  color            String?    @db.VarChar(9)
+  lastFourDigits   String?    @map("last_four_digits") @db.Char(4)
+  paymentAccountId String?    @map("payment_account_id") @db.Uuid
+  status           CardStatus @default(ACTIVE)
+  createdAt        DateTime   @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt        DateTime   @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt        DateTime?  @map("deleted_at") @db.Timestamptz(3)
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  paymentAccount        Account?               @relation(fields: [paymentAccountId], references: [id], onDelete: SetNull)
+  invoices              CreditCardInvoice[]
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+
+  // Nome único (case-insensitive) entre cartões ativos não excluídos.
+  @@unique([userId, name], map: "credit_cards_user_active_name_key", where: raw("status = 'ACTIVE' AND deleted_at IS NULL"))
+  @@index([userId, status])
+  @@index([userId, deletedAt])
+  @@index([paymentAccountId])
+  @@map("credit_cards")
+}
+
+model CreditCardInvoice {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  cardId         String        @map("card_id") @db.Uuid
+  // Primeiro dia do mês de referência da fatura.
+  referenceMonth DateTime      @map("reference_month") @db.Date
+  closingDate    DateTime      @map("closing_date") @db.Date
+  dueDate        DateTime      @map("due_date") @db.Date
+  status         InvoiceStatus @default(OPEN)
+  total          Decimal       @default(0) @db.Decimal(18, 2)
+  paidAmount     Decimal       @default(0) @map("paid_amount") @db.Decimal(18, 2)
+  paidAt         DateTime?     @map("paid_at") @db.Timestamptz(3)
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt      DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  card         CreditCard    @relation(fields: [cardId], references: [id], onDelete: Cascade)
+  transactions Transaction[]
+
+  @@unique([cardId, referenceMonth])
+  @@index([userId, dueDate])
+  @@index([userId, status])
+  @@map("credit_card_invoices")
+}
+
+// ───────────────────────── Categorização ─────────────────────────
+
+model Category {
+  id        String       @id @default(uuid()) @db.Uuid
+  userId    String       @map("user_id") @db.Uuid
+  name      String       @db.Citext
+  type      CategoryType
+  icon      String?      @db.VarChar(64)
+  color     String?      @db.VarChar(9)
+  parentId  String?      @map("parent_id") @db.Uuid
+  isDefault Boolean      @default(false) @map("is_default")
+  createdAt DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent                Category?              @relation("CategoryTree", fields: [parentId], references: [id], onDelete: Cascade)
+  children              Category[]             @relation("CategoryTree")
+  transactions          Transaction[]
+  recurringTransactions RecurringTransaction[]
+  budgets               Budget[]
+
+  // Unicidade case-insensitive (citext) entre categorias não excluídas: uma regra para
+  // raízes (parent_id NULL não é coberto por UNIQUE comum) e outra para subcategorias.
+  @@unique([userId, type, name], map: "categories_root_name_key", where: raw("parent_id IS NULL AND deleted_at IS NULL"))
+  @@unique([userId, parentId, name], map: "categories_child_name_key", where: raw("parent_id IS NOT NULL AND deleted_at IS NULL"))
+  @@index([userId, type])
+  @@index([parentId])
+  @@map("categories")
+}
+
+model Tag {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  name      String   @db.Citext
+  color     String?  @db.VarChar(9)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  transactions TransactionTag[]
+
+  @@unique([userId, name])
+  @@map("tags")
+}
+
+model TransactionTag {
+  transactionId String   @map("transaction_id") @db.Uuid
+  tagId         String   @map("tag_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  transaction Transaction @relation(fields: [transactionId], references: [id], onDelete: Cascade)
+  tag         Tag         @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([transactionId, tagId])
+  @@index([tagId])
+  @@map("transaction_tags")
+}
+
+// ───────────────────────── Lançamentos ─────────────────────────
+
+model Transaction {
+  id                     String            @id @default(uuid()) @db.Uuid
+  userId                 String            @map("user_id") @db.Uuid
+  type                   TransactionType
+  // Sempre positivo; o sinal é determinado por `type`.
+  amount                 Decimal           @db.Decimal(18, 2)
+  description            String            @db.VarChar(255)
+  date                   DateTime          @db.Date
+  status                 TransactionStatus @default(CLEARED)
+  notes                  String?
+  accountId              String?           @map("account_id") @db.Uuid
+  creditCardId           String?           @map("credit_card_id") @db.Uuid
+  invoiceId              String?           @map("invoice_id") @db.Uuid
+  categoryId             String?           @map("category_id") @db.Uuid
+  // Transferências geram duas pernas com o mesmo transferGroupId.
+  transferGroupId        String?           @map("transfer_group_id") @db.Uuid
+  transferAccountId      String?           @map("transfer_account_id") @db.Uuid
+  installmentGroupId     String?           @map("installment_group_id") @db.Uuid
+  installmentNumber      Int?              @map("installment_number") @db.SmallInt
+  installmentTotal       Int?              @map("installment_total") @db.SmallInt
+  recurringTransactionId String?           @map("recurring_transaction_id") @db.Uuid
+  // Descrição + notas normalizadas (minúsculas, sem acentos) mantidas pela aplicação,
+  // para busca case/accent-insensitive com índice trigram.
+  searchText             String            @default("") @map("search_text")
+  createdAt              DateTime          @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt              DateTime          @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt              DateTime?         @map("deleted_at") @db.Timestamptz(3)
+
+  user                  User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account               Account?               @relation("TransactionAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  transferAccount       Account?               @relation("TransactionTransferAccount", fields: [transferAccountId], references: [id], onDelete: SetNull)
+  creditCard            CreditCard?            @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  invoice               CreditCardInvoice?     @relation(fields: [invoiceId], references: [id], onDelete: SetNull)
+  category              Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  recurringTransaction  RecurringTransaction?  @relation(fields: [recurringTransactionId], references: [id], onDelete: SetNull)
+  tags                  TransactionTag[]
+  investmentTransaction InvestmentTransaction?
+  liabilityPayment      LiabilityPayment?
+
+  @@index([userId, date])
+  @@index([userId, categoryId])
+  @@index([userId, accountId])
+  @@index([userId, creditCardId])
+  @@index([userId, type, date])
+  @@index([userId, deletedAt])
+  @@index([invoiceId])
+  @@index([transferGroupId])
+  @@index([installmentGroupId])
+  @@index([recurringTransactionId])
+  @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "transactions_description_trgm_idx")
+  @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin, map: "transactions_search_text_trgm_idx")
+  @@map("transactions")
+}
+
+model RecurringTransaction {
+  id                   String              @id @default(uuid()) @db.Uuid
+  userId               String              @map("user_id") @db.Uuid
+  type                 TransactionType
+  amount               Decimal             @db.Decimal(18, 2)
+  description          String              @db.VarChar(255)
+  notes                String?
+  accountId            String?             @map("account_id") @db.Uuid
+  creditCardId         String?             @map("credit_card_id") @db.Uuid
+  categoryId           String?             @map("category_id") @db.Uuid
+  transferAccountId    String?             @map("transfer_account_id") @db.Uuid
+  frequency            RecurrenceFrequency
+  interval             Int                 @default(1) @db.SmallInt
+  startDate            DateTime            @map("start_date") @db.Date
+  endDate              DateTime?           @map("end_date") @db.Date
+  nextRunAt            DateTime?           @map("next_run_at") @db.Timestamptz(3)
+  lastRunAt            DateTime?           @map("last_run_at") @db.Timestamptz(3)
+  active               Boolean             @default(true)
+  // Confirma automaticamente ocorrências vencidas (status CLEARED na data).
+  autoConfirm          Boolean             @default(false) @map("auto_confirm")
+  // Cursor de materialização: ocorrências até esta data já foram geradas (idempotência).
+  lastMaterializedDate DateTime?           @map("last_materialized_date") @db.Date
+  createdAt            DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt            DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  user            User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account         Account?      @relation("RecurringAccount", fields: [accountId], references: [id], onDelete: SetNull)
+  transferAccount Account?      @relation("RecurringTransferAccount", fields: [transferAccountId], references: [id], onDelete: SetNull)
+  creditCard      CreditCard?   @relation(fields: [creditCardId], references: [id], onDelete: SetNull)
+  category        Category?     @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  transactions    Transaction[]
+
+  @@index([userId, active])
+  @@index([active, nextRunAt])
+  @@map("recurring_transactions")
+}
+
+// ───────────────────────── Planejamento ─────────────────────────
+
+model Budget {
+  id              String   @id @default(uuid()) @db.Uuid
+  userId          String   @map("user_id") @db.Uuid
+  categoryId      String   @map("category_id") @db.Uuid
+  // Primeiro dia do mês.
+  month           DateTime @db.Date
+  limitAmount     Decimal  @map("limit_amount") @db.Decimal(18, 2)
+  alertThresholds Int[]    @default([50, 80, 100]) @map("alert_thresholds")
+  // Limiares já notificados (cada limiar dispara no máximo uma vez por orçamento).
+  firedThresholds Int[]    @default([]) @map("fired_thresholds")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  category Category @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, categoryId, month])
+  @@index([userId, month])
+  @@map("budgets")
+}
+
+model Goal {
+  id                  String       @id @default(uuid()) @db.Uuid
+  userId              String       @map("user_id") @db.Uuid
+  name                String       @db.VarChar(80)
+  targetAmount        Decimal      @map("target_amount") @db.Decimal(18, 2)
+  currentAmount       Decimal      @default(0) @map("current_amount") @db.Decimal(18, 2)
+  targetDate          DateTime?    @map("target_date") @db.Date
+  priority            GoalPriority @default(MEDIUM)
+  category            GoalCategory @default(OTHER)
+  monthlyContribution Decimal?     @map("monthly_contribution") @db.Decimal(18, 2)
+  status              GoalStatus   @default(ACTIVE)
+  color               String?      @db.VarChar(9)
+  icon                String?      @db.VarChar(64)
+  completedAt         DateTime?    @map("completed_at") @db.Timestamptz(3)
+  createdAt           DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime     @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt           DateTime?    @map("deleted_at") @db.Timestamptz(3)
+
+  user          User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contributions GoalContribution[]
+
+  @@index([userId, status])
+  @@index([userId, deletedAt])
+  @@map("goals")
+}
+
+model GoalContribution {
+  id        String   @id @default(uuid()) @db.Uuid
+  userId    String   @map("user_id") @db.Uuid
+  goalId    String   @map("goal_id") @db.Uuid
+  // Positivo para aporte, negativo para resgate.
+  amount    Decimal  @db.Decimal(18, 2)
+  date      DateTime @db.Date
+  note      String?  @db.VarChar(255)
+  accountId String?  @map("account_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal    Goal     @relation(fields: [goalId], references: [id], onDelete: Cascade)
+  account Account? @relation(fields: [accountId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([goalId, date])
+  @@map("goal_contributions")
+}
+
+model EmergencyFund {
+  id                  String   @id @default(uuid()) @db.Uuid
+  userId              String   @unique @map("user_id") @db.Uuid
+  monthlyCost         Decimal  @map("monthly_cost") @db.Decimal(18, 2)
+  targetMonths        Int      @default(6) @map("target_months") @db.SmallInt
+  targetAmount        Decimal  @map("target_amount") @db.Decimal(18, 2)
+  currentAmount       Decimal  @default(0) @map("current_amount") @db.Decimal(18, 2)
+  linkedAccountId     String?  @map("linked_account_id") @db.Uuid
+  // true quando o alvo foi informado manualmente (não é monthlyCost × targetMonths).
+  customTarget        Boolean  @default(false) @map("custom_target")
+  monthlyContribution Decimal? @map("monthly_contribution") @db.Decimal(18, 2)
+  createdAt           DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt           DateTime @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  linkedAccount Account? @relation(fields: [linkedAccountId], references: [id], onDelete: SetNull)
+
+  @@index([linkedAccountId])
+  @@map("emergency_funds")
+}
+
+// ───────────────────────── Patrimônio ─────────────────────────
+
+model Investment {
+  id              String              @id @default(uuid()) @db.Uuid
+  userId          String              @map("user_id") @db.Uuid
+  name            String              @db.VarChar(120)
+  ticker          String?             @db.VarChar(20)
+  institution     String?             @db.VarChar(80)
+  type            InvestmentType
+  // Posição derivada da reexecução das InvestmentTransactions (null = sem cotas, ex.: CDB por valor).
+  quantity        Decimal?            @db.Decimal(24, 8)
+  averagePrice    Decimal?            @map("average_price") @db.Decimal(24, 8)
+  investedAmount  Decimal             @default(0) @map("invested_amount") @db.Decimal(18, 2)
+  currentValue    Decimal             @default(0) @map("current_value") @db.Decimal(18, 2)
+  // Σ dividendos + juros − taxas.
+  income          Decimal             @default(0) @db.Decimal(18, 2)
+  // Lucro realizado em vendas (receita − custo baixado).
+  realizedGain    Decimal             @default(0) @map("realized_gain") @db.Decimal(18, 2)
+  lastValuationAt DateTime?           @map("last_valuation_at") @db.Date
+  appliedAt       DateTime?           @map("applied_at") @db.Date
+  maturityDate    DateTime?           @map("maturity_date") @db.Date
+  liquidity       InvestmentLiquidity @default(DAILY)
+  liquidityDays   Int?                @map("liquidity_days") @db.SmallInt
+  accountId       String?             @map("account_id") @db.Uuid
+  notes           String?
+  createdAt       DateTime            @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt       DateTime            @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt       DateTime?           @map("deleted_at") @db.Timestamptz(3)
+
+  user         User                    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  account      Account?                @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  transactions InvestmentTransaction[]
+
+  @@index([userId, type])
+  @@index([userId, deletedAt])
+  @@index([accountId])
+  @@map("investments")
+}
+
+model InvestmentTransaction {
+  id            String                    @id @default(uuid()) @db.Uuid
+  userId        String                    @map("user_id") @db.Uuid
+  investmentId  String                    @map("investment_id") @db.Uuid
+  type          InvestmentTransactionType
+  quantity      Decimal?                  @db.Decimal(24, 8)
+  price         Decimal?                  @db.Decimal(24, 8)
+  amount        Decimal                   @db.Decimal(18, 2)
+  date          DateTime                  @db.Date
+  notes         String?                   @db.VarChar(255)
+  // Conta usada no movimento de caixa e o lançamento gerado (se houver).
+  accountId     String?                   @map("account_id") @db.Uuid
+  transactionId String?                   @unique @map("transaction_id") @db.Uuid
+  createdAt     DateTime                  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  investment  Investment   @relation(fields: [investmentId], references: [id], onDelete: Cascade)
+  account     Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([userId, date])
+  @@index([investmentId, date])
+  @@map("investment_transactions")
+}
+
+model Asset {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  name       String    @db.VarChar(120)
+  type       AssetType
+  value      Decimal   @db.Decimal(18, 2)
+  acquiredAt DateTime? @map("acquired_at") @db.Date
+  notes      String?
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt  DateTime  @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt  DateTime? @map("deleted_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@index([userId, deletedAt])
+  @@map("assets")
+}
+
+model Liability {
+  id                 String        @id @default(uuid()) @db.Uuid
+  userId             String        @map("user_id") @db.Uuid
+  name               String        @db.VarChar(120)
+  type               LiabilityType
+  principal          Decimal       @db.Decimal(18, 2)
+  outstandingBalance Decimal       @map("outstanding_balance") @db.Decimal(18, 2)
+  // Taxa anual em % (ex.: 12.5000 = 12,5% a.a.).
+  interestRate       Decimal?      @map("interest_rate") @db.Decimal(9, 4)
+  monthlyPayment     Decimal?      @map("monthly_payment") @db.Decimal(18, 2)
+  dueDay             Int?          @map("due_day") @db.SmallInt
+  startDate          DateTime?     @map("start_date") @db.Date
+  endDate            DateTime?     @map("end_date") @db.Date
+  notes              String?
+  createdAt          DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime      @updatedAt @map("updated_at") @db.Timestamptz(3)
+  deletedAt          DateTime?     @map("deleted_at") @db.Timestamptz(3)
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments LiabilityPayment[]
+
+  @@index([userId, type])
+  @@index([userId, deletedAt])
+  @@map("liabilities")
+}
+
+model LiabilityPayment {
+  id            String   @id @default(uuid()) @db.Uuid
+  userId        String   @map("user_id") @db.Uuid
+  liabilityId   String   @map("liability_id") @db.Uuid
+  amount        Decimal  @db.Decimal(18, 2)
+  date          DateTime @db.Date
+  accountId     String?  @map("account_id") @db.Uuid
+  transactionId String?  @unique @map("transaction_id") @db.Uuid
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  liability   Liability    @relation(fields: [liabilityId], references: [id], onDelete: Cascade)
+  account     Account?     @relation(fields: [accountId], references: [id], onDelete: SetNull)
+  transaction Transaction? @relation(fields: [transactionId], references: [id], onDelete: SetNull)
+
+  @@index([liabilityId, date])
+  @@index([userId])
+  @@map("liability_payments")
+}
+
+// ───────────────────────── Engajamento / histórico ─────────────────────────
+
+model Notification {
+  id        String           @id @default(uuid()) @db.Uuid
+  userId    String           @map("user_id") @db.Uuid
+  type      NotificationType
+  title     String           @db.VarChar(160)
+  body      String
+  data      Json             @default("{}")
+  readAt    DateTime?        @map("read_at") @db.Timestamptz(3)
+  // Chave de idempotência (ex.: "bill:<txId>:TODAY"): cada chave notifica uma única vez.
+  dedupeKey String?          @map("dedupe_key") @db.VarChar(160)
+  createdAt DateTime         @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, dedupeKey])
+  @@index([userId, readAt, createdAt])
+  @@map("notifications")
+}
+
+model FinancialSnapshot {
+  id               String   @id @default(uuid()) @db.Uuid
+  userId           String   @map("user_id") @db.Uuid
+  date             DateTime @db.Date
+  netWorth         Decimal  @map("net_worth") @db.Decimal(18, 2)
+  totalAssets      Decimal  @map("total_assets") @db.Decimal(18, 2)
+  totalLiabilities Decimal  @map("total_liabilities") @db.Decimal(18, 2)
+  cash             Decimal  @db.Decimal(18, 2)
+  investments      Decimal  @db.Decimal(18, 2)
+  emergencyFund    Decimal  @map("emergency_fund") @db.Decimal(18, 2)
+  income           Decimal  @db.Decimal(18, 2)
+  expenses         Decimal  @db.Decimal(18, 2)
+  createdAt        DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@map("financial_snapshots")
+}

@@ -1,0 +1,24 @@
+# dependências e build
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Prisma Client gerado
+src/generated/
+
+# uploads locais
+storage/
+
+# ambiente
+.env
+.env.*
+!.env.example
+
+# logs / SO / IDE
+*.log
+npm-debug.log*
+.DS_Store
+.idea/
+.vscode/*
+!.vscode/extensions.json

@@ -1,0 +1,15 @@
+node_modules
+dist
+coverage
+src/generated
+.env
+.env.*
+!.env.example
+*.log
+.git
+.DS_Store
+.idea
+.vscode
+test
+**/*.spec.ts
+storage
