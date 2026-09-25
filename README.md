@@ -157,6 +157,10 @@ Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | `ARGON2_*` | Custos do hash de senha (argon2id) |
 | `AUTH_MAX_FAILED_ATTEMPTS`, `AUTH_LOCKOUT_MINUTES` | Proteção contra força bruta |
 | `AUTH_REQUIRE_EMAIL_VERIFICATION` | Exigir e-mail confirmado para entrar (padrão `true`; hoje `false` no `.env`) |
+| `ABACATEPAY_API_KEY` | Chave de API da loja (Integrar → API Keys em [app.abacatepay.com](https://app.abacatepay.com)) |
+| `ABACATEPAY_BASE_URL` | Base da API v2 (padrão `https://api.abacatepay.com/v2`) |
+| `ABACATEPAY_WEBHOOK_SECRET` | Segredo escolhido por você, usado ao registrar o webhook (ver seção 11) |
+| `BILLING_TRIAL_DAYS`, `BILLING_PLAN_PRICE_CENTS` | Dias de teste grátis e preço do plano único, em centavos (padrão `7` / `2500`) |
 
 ### Frontend (`frontend/.env.local`)
 
@@ -167,3 +171,26 @@ Só variáveis públicas. **Nenhum segredo no frontend.**
 | `NEXT_PUBLIC_API_URL` | Base da API no navegador (padrão `/api`, via rewrite) |
 | `BACKEND_INTERNAL_URL` | Destino do rewrite (NestJS). Resolvido no build |
 | `NEXT_PUBLIC_SITE_URL` | URL canônica, usada em SEO e metadados |
+
+## 11. Cobrança (AbacatePay)
+
+Todo cadastro ganha **7 dias de teste grátis** (`BILLING_TRIAL_DAYS`). Ao vencer sem pagamento, o
+`SubscriptionGuard` bloqueia as rotas da API (exceto login/perfil/cobrança) com `402
+SUBSCRIPTION_REQUIRED`, e o frontend redireciona para `/assinatura`. Três formas de pagamento, via
+[AbacatePay](https://www.abacatepay.com): Pix avulso, cartão avulso (ambos liberam 30 dias; renovação
+manual) e cartão com recorrência (assinatura, renova sozinha).
+
+Setup em produção (a conta e a chave são criadas por você, não pelo agente):
+
+1. Crie a conta em [app.abacatepay.com](https://app.abacatepay.com) e gere a chave em
+   **Integrar → API Keys**. Preencha `ABACATEPAY_API_KEY` no `backend/.env`.
+2. Escolha um segredo forte qualquer para `ABACATEPAY_WEBHOOK_SECRET`.
+3. Registre o webhook uma vez, apontando para `https://<seu-domínio>/api/billing/webhook`, com os
+   eventos `checkout.completed`, `transparent.completed`, `subscription.completed`,
+   `subscription.renewed`, `subscription.cancelled` (via `POST /webhooks/create` da API da AbacatePay,
+   usando o mesmo valor de `ABACATEPAY_WEBHOOK_SECRET` no campo `secret`).
+4. Em desenvolvimento, use o Modo Sandbox/Devmode da AbacatePay (chave de teste) — sem webhook público,
+   os eventos não chegam automaticamente; simule-os manualmente ou teste via `test/billing.e2e-spec.ts`.
+
+Sem uma chave real configurada, os endpoints de checkout (`/billing/checkout/*`) respondem
+`503 SERVICE_UNAVAILABLE` — o resto do produto funciona normalmente.
