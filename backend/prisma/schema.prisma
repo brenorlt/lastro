@@ -225,6 +225,32 @@ enum SecurityEventType {
   @@map("security_event_type")
 }
 
+enum SubscriptionStatus {
+  TRIALING
+  ACTIVE
+  BLOCKED
+  CANCELLED
+
+  @@map("subscription_status")
+}
+
+enum BillingPaymentMethod {
+  PIX
+  CARD
+
+  @@map("billing_payment_method")
+}
+
+enum BillingPaymentStatus {
+  PENDING
+  PAID
+  FAILED
+  EXPIRED
+  REFUNDED
+
+  @@map("billing_payment_status")
+}
+
 // ───────────────────────── Identidade / Auth ─────────────────────────
 
 model User {
@@ -274,6 +300,8 @@ model User {
   financialSnapshots     FinancialSnapshot[]
   securityEvents         SecurityEvent[]
   liabilityPayments      LiabilityPayment[]
+  subscription           Subscription?
+  payments               Payment[]
 
   @@index([deletedAt])
   @@map("users")
@@ -674,6 +702,62 @@ model EmergencyFund {
 
   @@index([linkedAccountId])
   @@map("emergency_funds")
+}
+
+// ───────────────────────── Cobrança (AbacatePay) ─────────────────────────
+
+model Subscription {
+  id                       String             @id @default(uuid()) @db.Uuid
+  userId                   String             @unique @map("user_id") @db.Uuid
+  status                   SubscriptionStatus @default(TRIALING)
+  trialEndsAt              DateTime           @map("trial_ends_at") @db.Timestamptz(3)
+  currentPeriodEnd         DateTime?          @map("current_period_end") @db.Timestamptz(3)
+  // true quando o usuário cancelou a recorrência, mas mantém acesso até currentPeriodEnd.
+  cancelAtPeriodEnd        Boolean            @default(false) @map("cancel_at_period_end")
+  abacatepayCustomerId     String?            @unique @map("abacatepay_customer_id")
+  abacatepaySubscriptionId String?            @unique @map("abacatepay_subscription_id")
+  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  payments Payment[]
+
+  @@index([status, trialEndsAt])
+  @@index([status, currentPeriodEnd])
+  @@map("subscriptions")
+}
+
+model Payment {
+  id                 String               @id @default(uuid()) @db.Uuid
+  userId             String               @map("user_id") @db.Uuid
+  subscriptionId     String?              @map("subscription_id") @db.Uuid
+  method             BillingPaymentMethod
+  status             BillingPaymentStatus @default(PENDING)
+  amount             Decimal              @db.Decimal(18, 2)
+  abacatepayChargeId String               @unique @map("abacatepay_charge_id")
+  pixQrCode          String?              @map("pix_qr_code")
+  pixQrCodeImage     String?              @map("pix_qr_code_image")
+  checkoutUrl        String?              @map("checkout_url")
+  paidAt             DateTime?            @map("paid_at") @db.Timestamptz(3)
+  expiresAt          DateTime?            @map("expires_at") @db.Timestamptz(3)
+  createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt          DateTime             @updatedAt @map("updated_at") @db.Timestamptz(3)
+
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscription Subscription? @relation(fields: [subscriptionId], references: [id])
+
+  @@index([userId])
+  @@index([subscriptionId])
+  @@map("payments")
+}
+
+// Deduplicação de webhooks: `id` é o id do evento enviado pela AbacatePay (log_...), não gerado por nós.
+model BillingWebhookEvent {
+  id          String   @id
+  event       String
+  processedAt DateTime @default(now()) @map("processed_at") @db.Timestamptz(3)
+
+  @@map("billing_webhook_events")
 }
 
 // ───────────────────────── Patrimônio ─────────────────────────
