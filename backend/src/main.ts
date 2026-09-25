@@ -18,6 +18,8 @@ async function bootstrap(): Promise<void> {
   const app = await NestFactory.create<NestExpressApplication>(AppModule, {
     bufferLogs: true,
     abortOnError: false,
+    // Necessário pro webhook da AbacatePay: precisamos do corpo raw pra validar o HMAC.
+    rawBody: true,
   });
   app.useLogger(app.get(Logger));
   configureApp(app);

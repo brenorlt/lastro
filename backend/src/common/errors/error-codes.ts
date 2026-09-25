@@ -70,6 +70,10 @@ export const ErrorCode = {
   INVESTMENT_TX_NOT_FOUND: 'INVESTMENT_TX_NOT_FOUND',
   PAYMENT_EXCEEDS_BALANCE: 'PAYMENT_EXCEEDS_BALANCE',
   LINKED_TRANSACTION: 'LINKED_TRANSACTION',
+
+  // Cobrança
+  SUBSCRIPTION_REQUIRED: 'SUBSCRIPTION_REQUIRED',
+  WEBHOOK_SIGNATURE_INVALID: 'WEBHOOK_SIGNATURE_INVALID',
 } as const;
 
 export type ErrorCode = (typeof ErrorCode)[keyof typeof ErrorCode];
@@ -235,6 +239,15 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorDefinition> = {
     message:
       'Este lançamento foi gerado por um investimento ou pagamento de dívida: altere-o por lá',
   },
+
+  SUBSCRIPTION_REQUIRED: {
+    status: HttpStatus.PAYMENT_REQUIRED,
+    message: 'Seu período de teste acabou. Assine para continuar usando o Lastro',
+  },
+  WEBHOOK_SIGNATURE_INVALID: {
+    status: HttpStatus.UNAUTHORIZED,
+    message: 'Assinatura de webhook inválida',
+  },
 };
 
 /** Código padrão quando uma HttpException comum (não AppException) é lançada. */
@@ -250,6 +263,8 @@ export function errorCodeFromStatus(status: number): ErrorCode {
       return ErrorCode.NOT_FOUND;
     case 409:
       return ErrorCode.CONFLICT;
+    case 402:
+      return ErrorCode.SUBSCRIPTION_REQUIRED;
     case 413:
       return ErrorCode.PAYLOAD_TOO_LARGE;
     case 429:

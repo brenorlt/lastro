@@ -24,6 +24,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { CurrentUser } from '../common/decorators/current-user.decorator.js';
 import { Public } from '../common/decorators/public.decorator.js';
+import { SkipBilling } from '../common/decorators/skip-billing.decorator.js';
 import { ErrorCode } from '../common/errors/error-codes.js';
 import { ApiEnvelope, ApiErrors } from '../common/swagger/api-responses.decorator.js';
 import type { AuthUser } from '../common/types/auth-user.js';
@@ -62,6 +63,7 @@ const STRICT = { default: { limit: 5, ttl: MINUTE } };
 
 @ApiTags('auth')
 @UseGuards(TrustedOriginGuard)
+@SkipBilling()
 @Controller('auth')
 export class AuthController {
   constructor(

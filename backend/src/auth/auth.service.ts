@@ -94,6 +94,8 @@ export class AuthService {
     }
 
     try {
+      const trialDays = this.config.get('BILLING_TRIAL_DAYS');
+      const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
       const { user, token } = await this.prisma.$transaction(async (tx) => {
         const created = await tx.user.create({
           data: {
@@ -105,6 +107,7 @@ export class AuthService {
                 data: DEFAULT_CATEGORIES.map((category) => ({ ...category, isDefault: true })),
               },
             },
+            subscription: { create: { trialEndsAt } },
           },
         });
         const secret = await this.issueToken(tx, created.id, 'EMAIL_VERIFICATION');

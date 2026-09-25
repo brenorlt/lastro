@@ -31,6 +31,7 @@ import { clientContext } from '../../auth/security/client-context.js';
 import { clearSessionCookies } from '../../auth/sessions/auth-cookies.js';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
 import { Public } from '../../common/decorators/public.decorator.js';
+import { SkipBilling } from '../../common/decorators/skip-billing.decorator.js';
 import { AppException } from '../../common/errors/app.exception.js';
 import { ErrorCode } from '../../common/errors/error-codes.js';
 import { ApiEnvelope, ApiErrors } from '../../common/swagger/api-responses.decorator.js';
@@ -47,6 +48,7 @@ import { UsersService } from './users.service.js';
 export const AVATAR_MAX_BYTES = 2 * 1024 * 1024;
 
 @ApiTags('users')
+@SkipBilling()
 @Controller('users')
 export class UsersController {
   constructor(

@@ -77,6 +77,14 @@ export const envSchema = z
       .string()
       .optional()
       .transform((value) => value?.trim() || undefined),
+
+    // Cobrança (AbacatePay): chave de API da loja e segredo do webhook (ambos obrigatórios,
+    // sem default — usar um placeholder óbvio no .env até a conta real existir).
+    ABACATEPAY_API_KEY: z.string({ error: 'ABACATEPAY_API_KEY é obrigatório' }).min(1),
+    ABACATEPAY_BASE_URL: z.url().default('https://api.abacatepay.com/v2'),
+    ABACATEPAY_WEBHOOK_SECRET: secret('ABACATEPAY_WEBHOOK_SECRET'),
+    BILLING_TRIAL_DAYS: z.coerce.number().int().min(1).default(7),
+    BILLING_PLAN_PRICE_CENTS: z.coerce.number().int().min(1).default(2500),
   })
   .refine((env) => env.JWT_ACCESS_SECRET !== env.JWT_REFRESH_SECRET, {
     path: ['JWT_REFRESH_SECRET'],
