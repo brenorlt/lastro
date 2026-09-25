@@ -1,0 +1,57 @@
+# Lastro — orquestração local.
+#   Somente banco:  docker compose up -d postgres
+#   Stack completa: docker compose --profile app up -d --build
+name: lastro
+
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-lastro}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-lastro}
+      POSTGRES_DB: ${POSTGRES_DB:-lastro}
+    ports:
+      - "${POSTGRES_PORT:-5433}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-lastro} -d ${POSTGRES_DB:-lastro}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    profiles: ["app"]
+    build:
+      context: ./backend
+      dockerfile: ../docker/backend.Dockerfile
+    env_file: ./backend/.env
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-lastro}:${POSTGRES_PASSWORD:-lastro}@postgres:5432/${POSTGRES_DB:-lastro}?schema=public
+    ports:
+      - "${BACKEND_PORT:-3333}:3333"
+    volumes:
+      # Avatares enviados pelos usuários (UPLOAD_DIR).
+      - backend-storage:/app/storage
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["app"]
+    build:
+      context: ./frontend
+      dockerfile: ../docker/frontend.Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: /api
+        # Rewrites do Next são resolvidos no build: aponta para o serviço interno.
+        BACKEND_INTERNAL_URL: http://backend:3333
+    ports:
+      - "${FRONTEND_PORT:-3100}:3100"
+    depends_on:
+      - backend
+
+volumes:
+  postgres-data:
+  backend-storage:
