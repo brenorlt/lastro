@@ -72,6 +72,7 @@ export class AbacatePayClient {
   /**
    * Cobrança avulsa via Pix ou boleto (o boleto sempre vem com Pix alternativo).
    * A AbacatePay exige `data.customer` (nome + CPF/CNPJ) para boleto — para Pix é ignorado.
+   * `expiresInSeconds` só se aplica a Pix (ignorado pela AbacatePay para boleto).
    */
   async createTransparentCharge(input: {
     method: 'PIX' | 'BOLETO';
@@ -79,6 +80,7 @@ export class AbacatePayClient {
     externalId: string;
     description: string;
     customer?: { name: string; taxId: string };
+    expiresInSeconds?: number;
   }): Promise<AbacatePayTransparentCharge> {
     return this.call<AbacatePayTransparentCharge>('POST', '/transparents/create', {
       method: input.method,
@@ -87,6 +89,7 @@ export class AbacatePayClient {
         description: input.description,
         externalId: input.externalId,
         ...(input.customer ? { customer: input.customer } : {}),
+        ...(input.expiresInSeconds ? { expiresIn: input.expiresInSeconds } : {}),
       },
     });
   }

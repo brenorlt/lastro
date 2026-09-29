@@ -11,6 +11,10 @@ import type { BillingStatusDto, BoletoCheckoutDto, PixCheckoutDto } from './bill
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CYCLE_DAYS = 30;
+// A AbacatePay trata `externalId` como chave de idempotência: reemitir Pix para o mesmo
+// usuário enquanto a cobrança anterior está válida retorna a MESMA cobrança. Um Pix de
+// validade curta evita ficar preso a uma cobrança velha por muito tempo.
+const PIX_EXPIRES_IN_SECONDS = 5 * 60;
 
 // Chave usada pela AbacatePay para assinar o corpo dos webhooks (HMAC-SHA256), documentada
 // publicamente em https://docs.abacatepay.com/pages/webhooks — é a mesma para todo cliente
@@ -116,22 +120,27 @@ export class BillingService {
       // Exigido pela AbacatePay só para boleto; `taxId` sempre presente nesse caminho
       // (gravado em checkoutBoleto antes de chegar aqui).
       customer: method === 'BOLETO' ? { name: user.name, taxId: user.taxId! } : undefined,
+      expiresInSeconds: method === 'PIX' ? PIX_EXPIRES_IN_SECONDS : undefined,
     });
     const subscription = await this.prisma.subscription.findUniqueOrThrow({ where: { userId } });
-    await this.prisma.payment.create({
-      data: {
-        userId,
-        subscriptionId: subscription.id,
-        method,
-        status: 'PENDING',
-        amount: this.centsToAmount(this.planPriceCents),
-        abacatepayChargeId: charge.id,
-        pixQrCode: charge.brCode,
-        pixQrCodeImage: charge.brCodeBase64,
-        barCode: charge.barCode,
-        checkoutUrl: charge.url,
-        expiresAt: new Date(charge.expiresAt),
-      },
+    const paymentData = {
+      userId,
+      subscriptionId: subscription.id,
+      method,
+      status: 'PENDING' as const,
+      amount: this.centsToAmount(this.planPriceCents),
+      pixQrCode: charge.brCode,
+      pixQrCodeImage: charge.brCodeBase64,
+      barCode: charge.barCode,
+      checkoutUrl: charge.url,
+      expiresAt: new Date(charge.expiresAt),
+    };
+    // Enquanto a cobrança anterior for válida, a AbacatePay devolve o mesmo `charge.id`
+    // (idempotência por externalId) — upsert evita conflito de unicidade nesse caso.
+    await this.prisma.payment.upsert({
+      where: { abacatepayChargeId: charge.id },
+      create: { ...paymentData, abacatepayChargeId: charge.id },
+      update: paymentData,
     });
     return charge;
   }
