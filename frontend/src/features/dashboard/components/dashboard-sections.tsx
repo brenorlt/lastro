@@ -12,8 +12,9 @@ import { Badge, Card, CardBody, CardHeader } from "@/components/ui/primitives";
 import { Progress } from "@/components/ui/progress";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { cn } from "@/lib/cn";
-import { dayLabel, isFuture, todayISO } from "@/lib/dates";
+import { dayLabel, isFuture } from "@/lib/dates";
 import { formatCurrency, formatPercent, toNumber } from "@/lib/format";
+import { paymentStatusKind } from "@/features/transactions/components/payment-status";
 import { useOpenTransaction } from "@/features/transactions/use-open-transaction";
 import { useComposer } from "@/stores/composer-store";
 import type { Dashboard, DashboardInsight } from "@/types/dashboard";
@@ -195,7 +196,7 @@ export function GoalsCard({ goals }: { goals: Dashboard["goals"] }) {
 
 function CompactRow({ t, onConfirm }: { t: Transaction; onConfirm?: () => void }) {
   const openEdit = useOpenTransaction();
-  const overdue = t.status === "PENDING" && t.date < todayISO();
+  const overdue = paymentStatusKind(t) === "unpaid";
   const flow = t.type === "INCOME" ? "income" : t.type === "EXPENSE" ? "expense" : "neutral";
   return (
     <li className="flex items-center gap-3 py-3">

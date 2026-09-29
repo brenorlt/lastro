@@ -6,8 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { currentMonth, monthLabel, shiftMonth, type MonthRef } from "@/lib/dates";
-import type { TransactionStatus, TransactionType } from "@/types/finance";
+import type { TransactionType } from "@/types/finance";
 import { AccountSelect, CategorySelect } from "./entity-selects";
+
+/** Situação escolhida no filtro: CLEARED vai direto pra API; SCHEDULED/UNPAID buscam PENDING e refinam no cliente pela data. */
+export type SituationFilter = "CLEARED" | "SCHEDULED" | "UNPAID";
 
 export function MonthNavigator({ value, onChange }: { value: MonthRef; onChange: (m: MonthRef) => void }) {
   const now = currentMonth();
@@ -27,13 +30,13 @@ export interface ListFilters {
   type?: TransactionType;
   accountId?: string;
   categoryId?: string;
-  status?: TransactionStatus;
+  situation?: SituationFilter;
 }
 
 const ALL = "__all__";
 
 export function FiltersBar({ value, onChange }: { value: ListFilters; onChange: (f: ListFilters) => void }) {
-  const active = Boolean(value.q || value.type || value.accountId || value.categoryId || value.status);
+  const active = Boolean(value.q || value.type || value.accountId || value.categoryId || value.situation);
   const categoryType = value.type === "INCOME" ? "INCOME" : "EXPENSE";
 
   return (
@@ -66,12 +69,13 @@ export function FiltersBar({ value, onChange }: { value: ListFilters; onChange: 
           </div>
         )}
         <div className="lg:w-36">
-          <Select value={value.status ?? ALL} onValueChange={(s) => onChange({ ...value, status: s === ALL ? undefined : (s as TransactionStatus) })}>
+          <Select value={value.situation ?? ALL} onValueChange={(s) => onChange({ ...value, situation: s === ALL ? undefined : (s as SituationFilter) })}>
             <SelectTrigger aria-label="Filtrar por situação"><SelectValue /></SelectTrigger>
             <SelectContent>
               <SelectItem value={ALL}>Todas situações</SelectItem>
-              <SelectItem value="CLEARED">Efetivados</SelectItem>
-              <SelectItem value="PENDING">Pendentes</SelectItem>
+              <SelectItem value="CLEARED">Pago</SelectItem>
+              <SelectItem value="SCHEDULED">Agendado</SelectItem>
+              <SelectItem value="UNPAID">Não pago</SelectItem>
             </SelectContent>
           </Select>
         </div>

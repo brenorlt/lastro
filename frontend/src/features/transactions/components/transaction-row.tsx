@@ -11,11 +11,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { EntityIcon } from "@/components/ui/entity-icon";
-import { Badge } from "@/components/ui/primitives";
 import { Tooltip } from "@/components/ui/tooltip";
 import { cn } from "@/lib/cn";
 import { isFuture } from "@/lib/dates";
 import type { Transaction } from "@/types/finance";
+import { PaymentStatusBadge } from "./payment-status";
 
 interface RowProps {
   transaction: Transaction;
@@ -39,7 +39,10 @@ export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onDup
   const flow = t.type === "INCOME" ? "income" : t.type === "EXPENSE" ? "expense" : "neutral";
   const confirmLabel = t.type === "INCOME" ? "Marcar como recebido" : t.type === "TRANSFER" ? "Confirmar transferência" : "Marcar como pago";
   // Compras no cartão não têm "pago/pendente": quem se paga é a fatura.
-  const canConfirm = pending && !isFuture(t.date) && !t.creditCard;
+  const canToggleCleared = pending && !t.creditCard;
+  // O botão rápido na linha só aparece quando já é possível confirmar (hoje ou atrasado);
+  // no menu "..." a ação fica sempre disponível, mesmo para agendados no futuro.
+  const canConfirm = canToggleCleared && !isFuture(t.date);
 
   return (
     <div className="group relative flex min-h-16 items-center gap-3 px-4 py-3 transition-colors hover:bg-surface-sunken/60 sm:px-5">
@@ -64,15 +67,11 @@ export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onDup
           {t.installment && <span className="num shrink-0 rounded-[4px] bg-surface-sunken px-1.5 text-2xs text-ink-2">{t.installment.number}/{t.installment.total}</span>}
           {t.recurring && <Repeat className="size-3 shrink-0" aria-label="Recorrente" />}
           {t.tags.length > 0 && <span className="hidden truncate sm:inline">· {t.tags.map((x) => `#${x.name}`).join(" ")}</span>}
+          {pending && !t.creditCard && <PaymentStatusBadge transaction={t} className="shrink-0" />}
         </div>
       </div>
 
       <div className="relative z-10 flex shrink-0 items-center gap-2">
-        {pending && !t.creditCard && (
-          <Badge tone={isFuture(t.date) ? "accent" : "warning"} className="hidden sm:inline-flex">
-            {isFuture(t.date) ? "Agendado" : t.type === "INCOME" ? "A receber" : "A pagar"}
-          </Badge>
-        )}
         <Amount
           value={t.amount}
           flow={flow}
@@ -81,21 +80,35 @@ export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onDup
         />
         {canConfirm ? (
           <Tooltip content={confirmLabel}>
-            <IconButton label={confirmLabel} size="icon-sm" variant="secondary" onClick={onToggle}>
+            <IconButton
+              label={confirmLabel}
+              size="icon"
+              variant="secondary"
+              className="text-positive hover:text-positive sm:size-8 sm:rounded-sm"
+              onClick={onToggle}
+            >
               <Check />
             </IconButton>
           </Tooltip>
         ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <IconButton label={`Ações de ${t.description}`} size="icon-sm" className="sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 sm:data-[state=open]:opacity-100">
+            <IconButton
+              label={`Ações de ${t.description}`}
+              size="icon"
+              className="sm:size-8 sm:rounded-sm sm:opacity-0 sm:group-hover:opacity-100 sm:focus-visible:opacity-100 sm:data-[state=open]:opacity-100"
+            >
               <MoreHorizontal />
             </IconButton>
           </DropdownMenuTrigger>
           <DropdownMenuContent>
             <DropdownMenuItem onSelect={onEdit}><Pencil aria-hidden /> Editar</DropdownMenuItem>
             {!pending && !t.creditCard && <DropdownMenuItem onSelect={onToggle}><Undo2 aria-hidden /> Marcar como pendente</DropdownMenuItem>}
-            {canConfirm && <DropdownMenuItem onSelect={onToggle}><Check aria-hidden /> {confirmLabel}</DropdownMenuItem>}
+            {canToggleCleared && (
+              <DropdownMenuItem onSelect={onToggle} className="[&_svg]:text-positive">
+                <Check aria-hidden /> {confirmLabel}
+              </DropdownMenuItem>
+            )}
             <DropdownMenuItem onSelect={onDuplicate}><Copy aria-hidden /> Duplicar para hoje</DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem destructive onSelect={onDelete}><Trash2 aria-hidden /> Excluir</DropdownMenuItem>

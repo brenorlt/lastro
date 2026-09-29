@@ -14,6 +14,7 @@ import { cn } from "@/lib/cn";
 import { currentMonth, dayLabel, monthRange, type MonthRef } from "@/lib/dates";
 import { toNumber } from "@/lib/format";
 import { userMessage } from "@/services/api-error";
+import { paymentStatusKind } from "@/features/transactions/components/payment-status";
 import { useOpenTransaction } from "@/features/transactions/use-open-transaction";
 import { useComposer } from "@/stores/composer-store";
 import { useUiStore } from "@/stores/ui-store";
@@ -86,18 +87,34 @@ export function TransactionsView() {
   }, [params, openNew, router, pathname]);
 
   const query: TransactionFilters = useMemo(
-    () => ({ ...monthRange(month), q: q || undefined, type: filters.type, accountId: filters.accountId, categoryId: filters.categoryId, status: filters.status }),
-    [month, q, filters.type, filters.accountId, filters.categoryId, filters.status],
+    () => ({
+      ...monthRange(month),
+      q: q || undefined,
+      type: filters.type,
+      accountId: filters.accountId,
+      categoryId: filters.categoryId,
+      status: filters.situation === "CLEARED" ? "CLEARED" : filters.situation ? "PENDING" : undefined,
+    }),
+    [month, q, filters.type, filters.accountId, filters.categoryId, filters.situation],
   );
   const list = useTransactions(query);
   const toggle = useToggleCleared();
   const duplicate = useDuplicateTransaction();
   const del = useDeleteTransaction();
 
-  const rows = useMemo(() => list.data?.pages.flatMap((p) => p.data) ?? [], [list.data]);
+  // Agendado/Não pago são inferidos pela data (não existem como status na API): PENDING é buscado
+  // inteiro e refinado aqui, então a contagem exibida usa a lista já filtrada, não o total da página.
+  const allRows = useMemo(() => list.data?.pages.flatMap((p) => p.data) ?? [], [list.data]);
+  const rows = useMemo(() => {
+    if (filters.situation !== "SCHEDULED" && filters.situation !== "UNPAID") return allRows;
+    const kind = filters.situation === "SCHEDULED" ? "scheduled" : "unpaid";
+    return allRows.filter((t) => paymentStatusKind(t) === kind);
+  }, [allRows, filters.situation]);
   const meta = list.data?.pages[0]?.meta;
+  const narrowed = filters.situation === "SCHEDULED" || filters.situation === "UNPAID";
+  const count = narrowed ? rows.length : meta?.total;
   const groups = useMemo(() => groupByDay(rows), [rows]);
-  const filtered = Boolean(q || filters.type || filters.accountId || filters.categoryId || filters.status);
+  const filtered = Boolean(q || filters.type || filters.accountId || filters.categoryId || filters.situation);
 
   return (
     <>
@@ -115,7 +132,7 @@ export function TransactionsView() {
 
       <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
         <MonthNavigator value={month} onChange={setMonth} />
-        {meta && <p className="num text-xs text-ink-3">{meta.total} {meta.total === 1 ? "lançamento" : "lançamentos"}</p>}
+        {count !== undefined && <p className="num text-xs text-ink-3">{count} {count === 1 ? "lançamento" : "lançamentos"}</p>}
       </div>
 
       {meta ? <Totals totals={meta.totals} hidden={hidden} /> : list.isPending && (
