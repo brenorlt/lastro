@@ -1,9 +1,6 @@
 import type { NextConfig } from "next";
 
-/** Endereço do NestJS visto pelo servidor Next (nunca exposto ao navegador). */
-const backendUrl = (process.env.BACKEND_INTERNAL_URL ?? "http://localhost:3333").replace(/\/$/, "");
-
-// Só é preciso liberar outra origem se NEXT_PUBLIC_API_URL apontar para fora (sem o rewrite).
+// Só é preciso liberar outra origem se NEXT_PUBLIC_API_URL apontar para fora (sem o proxy).
 const apiOrigin = (() => {
   const url = process.env.NEXT_PUBLIC_API_URL;
   if (!url || url.startsWith("/")) return "";
@@ -32,10 +29,8 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
-  // API same-origin: cookies first-party, sem CORS no navegador.
-  async rewrites() {
-    return [{ source: "/api/:path*", destination: `${backendUrl}/api/:path*` }];
-  },
+  // /api/* é atendido por src/app/api/[...path]/route.ts (proxy manual pro backend) — não por
+  // um rewrite: o rewrite embutido do Next funde múltiplos Set-Cookie numa resposta só.
   async headers() {
     return [
       {
