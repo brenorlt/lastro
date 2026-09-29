@@ -25,7 +25,6 @@ services:
     profiles: ["app"]
     build:
       context: ./backend
-      dockerfile: ../docker/backend.Dockerfile
     env_file: ./backend/.env
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-lastro}:${POSTGRES_PASSWORD:-lastro}@postgres:5432/${POSTGRES_DB:-lastro}?schema=public

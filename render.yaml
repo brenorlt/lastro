@@ -2,8 +2,9 @@ services:
   - type: web
     name: lastro-backend
     runtime: docker
-    dockerfilePath: ./docker/backend.Dockerfile
-    dockerContext: ./backend
+    rootDir: backend
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
     plan: free
     healthCheckPath: /api/health/live
     envVars:
