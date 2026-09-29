@@ -2,7 +2,7 @@
 
 import { X } from "lucide-react";
 import { AlertDialog as Alert, Dialog as DialogPrimitive } from "radix-ui";
-import type { ReactNode } from "react";
+import { useRef, useState, type PointerEvent, type ReactNode } from "react";
 import { cn } from "@/lib/cn";
 import { Button, IconButton } from "./button";
 
@@ -58,12 +58,35 @@ interface DrawerContentProps extends DialogContentProps {
   side?: "right" | "bottom";
 }
 
+/** Distância de arrasto (px) a partir da qual soltar o grabber fecha a sheet. */
+const DISMISS_THRESHOLD = 120;
+
 /** Painel para formulários longos e detalhes. No mobile, desliza de baixo. */
 export function DrawerContent({ title, description, children, footer, className, side = "right" }: DrawerContentProps) {
+  const closeRef = useRef<HTMLButtonElement>(null);
+  const dragStartY = useRef<number | null>(null);
+  const [dragY, setDragY] = useState(0);
+
+  function onGrabberPointerDown(e: PointerEvent<HTMLDivElement>) {
+    dragStartY.current = e.clientY;
+    e.currentTarget.setPointerCapture(e.pointerId);
+  }
+  function onGrabberPointerMove(e: PointerEvent<HTMLDivElement>) {
+    if (dragStartY.current === null) return;
+    setDragY(Math.max(0, e.clientY - dragStartY.current));
+  }
+  function onGrabberPointerUp() {
+    if (dragStartY.current === null) return;
+    dragStartY.current = null;
+    if (dragY > DISMISS_THRESHOLD) closeRef.current?.click();
+    setDragY(0);
+  }
+
   return (
     <DialogPrimitive.Portal>
       <DialogPrimitive.Overlay className={overlay} />
       <DialogPrimitive.Content
+        style={dragY ? { transform: `translateY(${dragY}px)`, transition: "none" } : undefined}
         className={cn(
           "fixed z-50 flex flex-col bg-surface-raised shadow-lg ring-1 ring-line focus:outline-none",
           "inset-x-0 bottom-0 max-h-[92dvh] rounded-t-2xl animate-rise pb-[env(safe-area-inset-bottom)]",
@@ -72,7 +95,16 @@ export function DrawerContent({ title, description, children, footer, className,
         )}
         {...(!description && { "aria-describedby": undefined })}
       >
-        <div aria-hidden className="mx-auto mt-2.5 h-1 w-9 rounded-full bg-line-strong sm:hidden" />
+        {/* Grabber: arraste para baixo para fechar (área de toque maior que a barra visível). */}
+        <div
+          className="flex touch-none justify-center py-2.5 sm:hidden"
+          onPointerDown={onGrabberPointerDown}
+          onPointerMove={onGrabberPointerMove}
+          onPointerUp={onGrabberPointerUp}
+          onPointerCancel={onGrabberPointerUp}
+        >
+          <div aria-hidden className="h-1 w-9 rounded-full bg-line-strong" />
+        </div>
         <header className="flex items-start justify-between gap-4 border-b border-line px-6 py-5">
           <div className="space-y-1">
             <DialogPrimitive.Title className="text-lg font-semibold text-ink">{title}</DialogPrimitive.Title>
@@ -81,7 +113,7 @@ export function DrawerContent({ title, description, children, footer, className,
             )}
           </div>
           <DialogPrimitive.Close asChild>
-            <IconButton label="Fechar" size="icon-sm" className="-mr-2">
+            <IconButton ref={closeRef} label="Fechar" size="icon-sm" className="-mr-2">
               <X />
             </IconButton>
           </DialogPrimitive.Close>

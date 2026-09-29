@@ -272,3 +272,16 @@
     scroll-behavior: auto !important;
   }
 }
+
+/* Header, tab bar e overlay são a "camada flutuante" translúcida do design system.
+   Reduce Transparency troca o blur por uma superfície opaca, sem perder a leitura do conteúdo. */
+@media (prefers-reduced-transparency: reduce) {
+  .backdrop-blur-xl,
+  .backdrop-blur-\[2px\] {
+    backdrop-filter: none;
+  }
+  .bg-canvas\/80,
+  .bg-canvas\/85 {
+    background-color: var(--canvas);
+  }
+}
