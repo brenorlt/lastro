@@ -1,7 +1,12 @@
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-import helmet from 'helmet';
+// Import padrão de "helmet" resolve de forma inconsistente entre ambientes (passou local,
+// falhou no build da Vercel) — o pacote é dual ESM/CJS e a sínte do default via
+// esModuleInterop varia conforme qual arquivo de tipos ("d.cts"/"d.mts") o TS escolhe.
+// Acessar ".default" por cima do namespace import não depende dessa síntese.
+import * as helmetModule from 'helmet';
+const helmet = helmetModule.default;
 import { REQUEST_ID_HEADER } from './common/types/http.js';
 import { AppConfigService } from './config/app-config.service.js';
 import { requestIdMiddleware } from './interceptors/request-id.middleware.js';
