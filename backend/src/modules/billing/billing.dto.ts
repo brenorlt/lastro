@@ -1,4 +1,19 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { Transform } from 'class-transformer';
+import { Matches } from 'class-validator';
+
+const onlyDigits = ({ value }: { value: unknown }) =>
+  typeof value === 'string' ? value.replace(/\D/g, '') : value;
+
+export class CheckoutBoletoDto {
+  @ApiProperty({
+    example: '39053344705',
+    description: 'CPF ou CNPJ do pagador (só dígitos ou com máscara)',
+  })
+  @Transform(onlyDigits)
+  @Matches(/^(\d{11}|\d{14})$/, { message: 'Informe um CPF ou CNPJ válido' })
+  taxId: string;
+}
 
 export class BillingStatusDto {
   @ApiProperty({ enum: ['TRIALING', 'ACTIVE', 'BLOCKED', 'CANCELLED'] })

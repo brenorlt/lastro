@@ -3,10 +3,26 @@
 import { Barcode, Copy, ExternalLink, QrCode } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Card, CardBody, CardHeader } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toaster";
 import { userMessage } from "@/services/api-error";
 import { useBillingStatus, useCheckoutBoleto, useCheckoutPix } from "../api";
+
+function formatTaxId(digits: string): string {
+  if (digits.length <= 11) {
+    return digits.replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d)/, "$1.$2").replace(/(\d{3})(\d{1,2})$/, "$1-$2");
+  }
+  return digits
+    .replace(/(\d{2})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1.$2")
+    .replace(/(\d{3})(\d)/, "$1/$2")
+    .replace(/(\d{4})(\d{1,2})$/, "$1-$2");
+}
+
+function isValidTaxId(digits: string): boolean {
+  return digits.length === 11 || digits.length === 14;
+}
 
 function PixPanel({ planPrice }: { planPrice: string }) {
   const checkout = useCheckoutPix();
@@ -49,18 +65,33 @@ function PixPanel({ planPrice }: { planPrice: string }) {
 
 function BoletoPanel({ planPrice }: { planPrice: string }) {
   const checkout = useCheckoutBoleto();
+  const [taxId, setTaxId] = useState("");
   // O boleto pode levar até 2 dias úteis para compensar após o pagamento.
   useBillingStatus({ refetchInterval: checkout.data ? 15000 : false });
 
   if (!checkout.data) {
+    const digits = taxId.replace(/\D/g, "");
     return (
-      <Button
-        className="w-full"
-        loading={checkout.isPending}
-        onClick={() => checkout.mutate(undefined, { onError: (err) => toast.error(userMessage(err)) })}
-      >
-        Gerar boleto de {planPrice}
-      </Button>
+      <div className="space-y-3">
+        <Input
+          inputMode="numeric"
+          placeholder="CPF ou CNPJ"
+          value={taxId}
+          maxLength={18}
+          onChange={(e) => setTaxId(formatTaxId(e.target.value.replace(/\D/g, "").slice(0, 14)))}
+          aria-label="CPF ou CNPJ"
+        />
+        <Button
+          className="w-full"
+          loading={checkout.isPending}
+          disabled={!isValidTaxId(digits)}
+          onClick={() =>
+            checkout.mutate(digits, { onError: (err) => toast.error(userMessage(err)) })
+          }
+        >
+          Gerar boleto de {planPrice}
+        </Button>
+      </div>
     );
   }
 
@@ -75,14 +106,14 @@ function BoletoPanel({ planPrice }: { planPrice: string }) {
         {checkout.data.barCode}
       </p>
       <div className="flex flex-col gap-2 sm:flex-row">
-        <Button variant="secondary" className="w-full" onClick={() => void copy()}>
+        <Button variant="secondary" className="w-full sm:w-0 sm:flex-1" onClick={() => void copy()}>
           <Copy aria-hidden /> Copiar linha digitável
         </Button>
         <a
           href={checkout.data.url}
           target="_blank"
           rel="noreferrer"
-          className="inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium ring-1 ring-line hover:bg-surface-2"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium ring-1 ring-line hover:bg-surface-2 sm:w-0 sm:flex-1"
         >
           <ExternalLink aria-hidden className="size-4" /> Ver boleto
         </a>

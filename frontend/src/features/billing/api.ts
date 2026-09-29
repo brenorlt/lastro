@@ -7,7 +7,7 @@ export const billingKeys = { status: ["billing-status"] as const };
 export const billingApi = {
   status: () => api.get<BillingStatus>("/billing/status"),
   checkoutPix: () => api.post<PixCheckout>("/billing/checkout/pix"),
-  checkoutBoleto: () => api.post<BoletoCheckout>("/billing/checkout/boleto"),
+  checkoutBoleto: (taxId: string) => api.post<BoletoCheckout>("/billing/checkout/boleto", { taxId }),
 };
 
 export function useBillingStatus(options?: { refetchInterval?: number | false }) {
@@ -23,5 +23,7 @@ export function useCheckoutPix() {
 }
 
 export function useCheckoutBoleto() {
-  return useMutation({ mutationFn: async () => (await billingApi.checkoutBoleto()).data });
+  return useMutation({
+    mutationFn: async (taxId: string) => (await billingApi.checkoutBoleto(taxId)).data,
+  });
 }

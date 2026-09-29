@@ -1,4 +1,14 @@
-import { Controller, Get, Headers, HttpCode, HttpStatus, Post, Query, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Headers,
+  HttpCode,
+  HttpStatus,
+  Post,
+  Query,
+  Req,
+} from '@nestjs/common';
 import type { RawBodyRequest } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../../common/decorators/current-user.decorator.js';
@@ -9,7 +19,12 @@ import { ApiEnvelope, ApiErrors } from '../../common/swagger/api-responses.decor
 import type { AppRequest } from '../../common/types/http.js';
 import type { AuthUser } from '../../common/types/auth-user.js';
 import { BillingService } from './billing.service.js';
-import { BillingStatusDto, BoletoCheckoutDto, PixCheckoutDto } from './billing.dto.js';
+import {
+  BillingStatusDto,
+  BoletoCheckoutDto,
+  CheckoutBoletoDto,
+  PixCheckoutDto,
+} from './billing.dto.js';
 
 @ApiTags('billing')
 @SkipBilling()
@@ -39,8 +54,11 @@ export class BillingController {
   @ApiBearerAuth()
   @ApiOperation({ summary: 'Gera uma cobrança de boleto avulsa (30 dias de acesso)' })
   @ApiEnvelope(BoletoCheckoutDto)
-  checkoutBoleto(@CurrentUser() user: AuthUser): Promise<BoletoCheckoutDto> {
-    return this.billing.checkoutBoleto(user.id);
+  checkoutBoleto(
+    @CurrentUser() user: AuthUser,
+    @Body() dto: CheckoutBoletoDto,
+  ): Promise<BoletoCheckoutDto> {
+    return this.billing.checkoutBoleto(user.id, dto.taxId);
   }
 
   @Public()

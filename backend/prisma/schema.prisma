@@ -260,6 +260,8 @@ model User {
   name                  String    @db.VarChar(120)
   phone                 String?   @db.VarChar(32)
   avatarUrl             String?   @map("avatar_url")
+  // CPF/CNPJ (só dígitos) — exigido pela AbacatePay para emitir boleto.
+  taxId                 String?   @map("tax_id") @db.VarChar(14)
   emailVerifiedAt       DateTime? @map("email_verified_at") @db.Timestamptz(3)
   currency              String    @default("BRL") @db.Char(3)
   locale                String    @default("pt-BR") @db.VarChar(10)

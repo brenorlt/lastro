@@ -88,7 +88,8 @@ export class BillingService {
     };
   }
 
-  async checkoutBoleto(userId: string): Promise<BoletoCheckoutDto> {
+  async checkoutBoleto(userId: string, taxId: string): Promise<BoletoCheckoutDto> {
+    await this.prisma.user.update({ where: { id: userId }, data: { taxId } });
     const charge = await this.createOneTimeCharge(userId, 'BOLETO');
     return {
       id: charge.id,
@@ -103,11 +104,18 @@ export class BillingService {
 
   private async createOneTimeCharge(userId: string, method: 'PIX' | 'BOLETO') {
     await this.ensureCustomerId(userId);
+    const user = await this.prisma.user.findUniqueOrThrow({
+      where: { id: userId },
+      select: { name: true, taxId: true },
+    });
     const charge = await this.abacatepay.createTransparentCharge({
       method,
       amountCents: this.planPriceCents,
       externalId: userId,
       description: 'Lastro Completo - 30 dias de acesso',
+      // Exigido pela AbacatePay só para boleto; `taxId` sempre presente nesse caminho
+      // (gravado em checkoutBoleto antes de chegar aqui).
+      customer: method === 'BOLETO' ? { name: user.name, taxId: user.taxId! } : undefined,
     });
     const subscription = await this.prisma.subscription.findUniqueOrThrow({ where: { userId } });
     await this.prisma.payment.create({
