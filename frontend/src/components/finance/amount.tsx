@@ -34,9 +34,9 @@ export function Amount({ value, flow = "neutral", currency, className, splitCent
         <span className="sr-only">{srPrefix}{formatCurrency(n, { currency })}</span>
         <span aria-hidden>
           {sign}
-          <span className="mr-[0.15em] text-[0.5em] align-[0.6em] font-sans font-medium text-ink-3">{p.symbol}</span>
-          {p.integer}
-          <span className="text-[0.55em] text-ink-3">{p.decimal}{p.fraction}</span>
+          <span className="mr-[0.18em] text-[0.42em] align-[0.68em] font-sans font-medium tracking-[0.01em] text-ink-3">{p.symbol}</span>
+          <span className="font-semibold">{p.integer}</span>
+          <span className="text-[0.5em] font-normal text-ink-3">{p.decimal}{p.fraction}</span>
         </span>
       </span>
     );
