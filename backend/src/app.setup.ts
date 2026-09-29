@@ -1,15 +1,23 @@
 import { type NestExpressApplication } from '@nestjs/platform-express';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import cookieParser from 'cookie-parser';
-// Import padrão de "helmet" resolve de forma inconsistente entre ambientes (passou local,
-// falhou no build da Vercel) — o pacote é dual ESM/CJS e a sínte do default via
-// esModuleInterop varia conforme qual arquivo de tipos ("d.cts"/"d.mts") o TS escolhe.
-// Acessar ".default" por cima do namespace import não depende dessa síntese.
-import * as helmetModule from 'helmet';
-const helmet = helmetModule.default;
+import { createRequire } from 'node:module';
+import type { IncomingMessage, ServerResponse } from 'node:http';
 import { REQUEST_ID_HEADER } from './common/types/http.js';
 import { AppConfigService } from './config/app-config.service.js';
 import { requestIdMiddleware } from './interceptors/request-id.middleware.js';
+
+// helmet: import default/namespace resolve de forma inconsistente entre ambientes (passou
+// local, falhou no build da Vercel com "not callable") — o pacote publica tipos ESM/CJS
+// duplicados e qual arquivo o TS escolhe sob "nodenext" varia por ambiente. `require` direto
+// via createRequire ignora esses tipos publicados; a assinatura é a da própria lib.
+type HelmetMiddleware = (
+  req: IncomingMessage,
+  res: ServerResponse,
+  next: (err?: unknown) => void,
+) => void;
+type Helmet = (options?: Record<string, unknown>) => HelmetMiddleware;
+const helmet = createRequire(import.meta.url)('helmet') as Helmet;
 
 export const GLOBAL_PREFIX = 'api';
 
