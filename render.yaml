@@ -1,0 +1,43 @@
+services:
+  - type: web
+    name: lastro-backend
+    runtime: docker
+    dockerfilePath: ./docker/backend.Dockerfile
+    dockerContext: ./backend
+    plan: free
+    healthCheckPath: /api/health/live
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3333
+      # URL pública do frontend (ex.: https://lastrofinance.com) — usada em links de
+      # e-mail e na validação de origem de /auth/refresh e /auth/logout.
+      - key: APP_URL
+        sync: false
+      # Connection string do Neon (ou outro Postgres externo). Formato:
+      # postgresql://usuario:senha@host/banco?sslmode=require
+      - key: DATABASE_URL
+        sync: false
+      # Gerados automaticamente pelo Render ao criar o serviço; nunca reaproveite entre ambientes.
+      - key: JWT_ACCESS_SECRET
+        generateValue: true
+      - key: JWT_REFRESH_SECRET
+        generateValue: true
+      # Mesma URL pública do frontend, separada por vírgula se houver mais de uma
+      # (ex.: https://lastrofinance.com,https://www.lastrofinance.com).
+      - key: CORS_ORIGINS
+        sync: false
+      # Render está na frente da API com seu próprio proxy — 1 hop confiável.
+      - key: TRUST_PROXY
+        value: "1"
+      # Sem disco persistente no plano free do Render: avatares enviados não sobrevivem
+      # a um redeploy/restart até isso migrar para um storage externo (ex.: Cloudflare R2).
+      - key: UPLOAD_DIR
+        value: ./storage
+      - key: MAIL_TRANSPORT
+        value: log
+      - key: ABACATEPAY_API_KEY
+        sync: false
+      - key: ABACATEPAY_WEBHOOK_SECRET
+        sync: false
