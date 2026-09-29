@@ -2,17 +2,17 @@ import { Card } from "@/components/ui/primitives";
 import { DsExample, DsSection } from "../section";
 
 const COLORS: { token: string; role: string; light: string; dark: string; ratio?: string }[] = [
-  { token: "canvas", role: "Fundo da aplicação", light: "#F6F6F3", dark: "#0A0B0D" },
-  { token: "surface", role: "Cards e painéis", light: "#FFFFFF", dark: "#131519" },
-  { token: "surface-sunken", role: "Campos, trilhas, hover", light: "#EFEFEB", dark: "#0F1114" },
-  { token: "ink", role: "Texto principal", light: "#111316", dark: "#F2F2EF", ratio: "17.2 / 17.6" },
-  { token: "ink-2", role: "Texto secundário", light: "#565B63", dark: "#A4A9B1", ratio: "6.3 / 8.3" },
-  { token: "ink-3", role: "Rótulos e metadados", light: "#666B73", dark: "#8A9099", ratio: "4.95 / 6.1" },
-  { token: "accent", role: "Interação: links, foco, ação primária", light: "#2F3FCF", dark: "#8E9BFF", ratio: "7.1 / 7.8" },
-  { token: "brass", role: "Exclusivo do patrimônio", light: "#8A6628", dark: "#D6B36E", ratio: "4.8 / 9.9" },
-  { token: "positive", role: "Entradas, metas atingidas", light: "#0A7350", dark: "#4FCB95", ratio: "5.4 / 9.7" },
-  { token: "negative", role: "Excesso, erro, ação destrutiva", light: "#B3342D", dark: "#F2847B", ratio: "5.6 / 7.8" },
-  { token: "warning", role: "Atenção (80% do orçamento)", light: "#8F5B00", dark: "#E6B04C", ratio: "5.3 / 10.0" },
+  { token: "canvas", role: "Fundo da aplicação", light: "#F6F6F3", dark: "#17181C" },
+  { token: "surface", role: "Cards e painéis", light: "#FFFFFF", dark: "#202329" },
+  { token: "surface-sunken", role: "Campos, trilhas, hover", light: "#EFEFEB", dark: "#121317" },
+  { token: "ink", role: "Texto principal", light: "#111316", dark: "#F2F2EF", ratio: "17.2 / 15.8" },
+  { token: "ink-2", role: "Texto secundário", light: "#565B63", dark: "#B7BCC3", ratio: "6.3 / 9.3" },
+  { token: "ink-3", role: "Rótulos e metadados", light: "#666B73", dark: "#9AA0A8", ratio: "5.0 / 6.7" },
+  { token: "accent", role: "Interação: links, foco, ação primária", light: "#2F3FCF", dark: "#8E9BFF", ratio: "7.1 / 7.0" },
+  { token: "brass", role: "Exclusivo do patrimônio", light: "#8A6628", dark: "#D6B36E", ratio: "4.8 / 8.9" },
+  { token: "positive", role: "Entradas, metas atingidas", light: "#0A7350", dark: "#4FCB95", ratio: "5.4 / 8.7" },
+  { token: "negative", role: "Excesso, erro, ação destrutiva", light: "#B3342D", dark: "#F2847B", ratio: "5.6 / 7.1" },
+  { token: "warning", role: "Atenção (80% do orçamento)", light: "#8F5B00", dark: "#E6B04C", ratio: "5.3 / 9.0" },
 ];
 
 const TYPE = [

@@ -61,16 +61,16 @@
 .dark {
   color-scheme: dark;
 
-  --canvas: #0a0b0d;
-  --surface: #131519;
-  --surface-raised: #1b1e23;
-  --surface-sunken: #0f1114;
-  --line: #24272d;
-  --line-strong: #33373e;
+  --canvas: #17181c;
+  --surface: #202329;
+  --surface-raised: #282c34;
+  --surface-sunken: #121317;
+  --line: #33373f;
+  --line-strong: #454a54;
 
   --ink: #f2f2ef;
-  --ink-2: #a4a9b1;
-  --ink-3: #8a9099;
+  --ink-2: #b7bcc3;
+  --ink-3: #9aa0a8;
   --ink-inverse: #0a0b0d;
 
   --accent: #8e9bff;

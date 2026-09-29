@@ -30,18 +30,22 @@ Contraste WCAG medido sobre `canvas` (claro / escuro). Mínimo de 4,5:1 para tex
 
 | Token | Papel | Claro | Escuro | Contraste |
 | --- | --- | --- | --- | --- |
-| `canvas` | Fundo da aplicação | `#F6F6F3` | `#0A0B0D` | — |
-| `surface` | Cards e painéis | `#FFFFFF` | `#131519` | — |
-| `surface-raised` | Modais, menus, popovers | `#FFFFFF` | `#1B1E23` | — |
-| `surface-sunken` | Campos, trilhas, hover | `#EFEFEB` | `#0F1114` | — |
-| `ink` | Texto principal | `#111316` | `#F2F2EF` | 17,2 / 17,6 |
-| `ink-2` | Texto secundário | `#565B63` | `#A4A9B1` | 6,3 / 8,3 |
-| `ink-3` | Rótulos, metadados | `#666B73` | `#8A9099` | 4,95 / 6,1 |
-| `accent` | Links, foco, ação primária | `#2F3FCF` | `#8E9BFF` | 7,1 / 7,8 |
-| `brass` | **Exclusivo do patrimônio** | `#8A6628` | `#D6B36E` | 4,8 / 9,9 |
-| `positive` | Entradas, meta atingida | `#0A7350` | `#4FCB95` | 5,4 / 9,7 |
-| `negative` | Excesso, erro, destrutivo | `#B3342D` | `#F2847B` | 5,6 / 7,8 |
-| `warning` | Atenção (80% do orçamento) | `#8F5B00` | `#E6B04C` | 5,3 / 10,0 |
+| `canvas` | Fundo da aplicação | `#F6F6F3` | `#17181C` | — |
+| `surface` | Cards e painéis | `#FFFFFF` | `#202329` | — |
+| `surface-raised` | Modais, menus, popovers | `#FFFFFF` | `#282C34` | — |
+| `surface-sunken` | Campos, trilhas, hover | `#EFEFEB` | `#121317` | — |
+| `ink` | Texto principal | `#111316` | `#F2F2EF` | 17,2 / 15,8 |
+| `ink-2` | Texto secundário | `#565B63` | `#B7BCC3` | 6,3 / 9,3 |
+| `ink-3` | Rótulos, metadados | `#666B73` | `#9AA0A8` | 5,0 / 6,7 |
+| `accent` | Links, foco, ação primária | `#2F3FCF` | `#8E9BFF` | 7,1 / 7,0 |
+| `brass` | **Exclusivo do patrimônio** | `#8A6628` | `#D6B36E` | 4,8 / 8,9 |
+| `positive` | Entradas, meta atingida | `#0A7350` | `#4FCB95` | 5,4 / 8,7 |
+| `negative` | Excesso, erro, destrutivo | `#B3342D` | `#F2847B` | 5,6 / 7,1 |
+| `warning` | Atenção (80% do orçamento) | `#8F5B00` | `#E6B04C` | 5,3 / 9,0 |
+
+O fundo escuro era quase preto puro (`#0A0B0D`); subimos a luminância dele e a de `ink-2`/`ink-3`
+porque números e valores secundários (rótulos, legendas) ficavam camuflados nele — contraste
+numérico já passava, mas o efeito perceptual em telas reais era de "cinza sobre preto ilegível".
 
 Texto sobre o botão primário: branco sobre `#2F3FCF` = 7,7:1; `#0A0B0D` sobre `#8E9BFF` = 7,8:1.
 Com `prefers-contrast: more`, `ink-2`, `ink-3` e `line` escurecem (ou clareiam no escuro).
