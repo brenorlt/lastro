@@ -113,7 +113,7 @@ export class BillingService {
     const charge = await this.abacatepay.createPixCharge({
       amountCents: this.planPriceCents,
       externalId: userId,
-      description: 'Lastro Completo — 30 dias de acesso',
+      description: 'Lastro Completo - 30 dias de acesso',
     });
     const subscription = await this.prisma.subscription.findUniqueOrThrow({ where: { userId } });
     await this.prisma.payment.create({
