@@ -241,6 +241,8 @@ export class BillingService {
         data: {
           status: 'ACTIVE',
           currentPeriodEnd: nextPeriodEnd(subscription, now),
+          // Novo período pago: libera o aviso de "prestes a vencer" para o próximo ciclo.
+          expiryNoticeSentAt: null,
         },
       });
     });

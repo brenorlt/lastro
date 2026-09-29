@@ -727,6 +727,9 @@ model Subscription {
   // automática; vencido esse prazo, o job de expiração bloqueia até um novo pagamento.
   currentPeriodEnd     DateTime?          @map("current_period_end") @db.Timestamptz(3)
   abacatepayCustomerId String?            @unique @map("abacatepay_customer_id")
+  // Quando o aviso de "acesso prestes a vencer" foi enviado nesse ciclo — evita reenviar a
+  // cada execução horária do job; zerado quando um novo pagamento renova o período.
+  expiryNoticeSentAt   DateTime?          @map("expiry_notice_sent_at") @db.Timestamptz(3)
   createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
   updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 

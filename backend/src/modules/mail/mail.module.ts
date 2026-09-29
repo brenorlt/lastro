@@ -3,6 +3,7 @@ import { AppConfigService } from '../../config/app-config.service.js';
 import { LogMailTransport } from './log-mail.transport.js';
 import { MailService } from './mail.service.js';
 import { MAIL_TRANSPORT, type MailTransport } from './mail.types.js';
+import { ResendMailTransport } from './resend-mail.transport.js';
 import { SmtpMailTransport } from './smtp-mail.transport.js';
 
 @Global()
@@ -11,10 +12,19 @@ import { SmtpMailTransport } from './smtp-mail.transport.js';
     {
       provide: MAIL_TRANSPORT,
       inject: [AppConfigService],
-      useFactory: (config: AppConfigService): MailTransport =>
-        config.get('MAIL_TRANSPORT') === 'smtp'
-          ? new SmtpMailTransport(config.get('SMTP_URL') ?? '')
-          : new LogMailTransport(config.isDevelopment || config.isTest),
+      useFactory: (config: AppConfigService): MailTransport => {
+        switch (config.get('MAIL_TRANSPORT')) {
+          case 'resend':
+            return new ResendMailTransport(
+              config.get('RESEND_API_KEY') ?? '',
+              config.get('MAIL_FROM'),
+            );
+          case 'smtp':
+            return new SmtpMailTransport(config.get('SMTP_URL') ?? '');
+          default:
+            return new LogMailTransport(config.isDevelopment || config.isTest);
+        }
+      },
     },
     MailService,
   ],

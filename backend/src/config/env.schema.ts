@@ -71,12 +71,19 @@ export const envSchema = z
     // Diretório de arquivos enviados (avatares). Em Docker, monte um volume aqui.
     UPLOAD_DIR: z.string().min(1).default('./storage'),
 
-    MAIL_TRANSPORT: z.enum(['log', 'smtp']).default('log'),
-    MAIL_FROM: z.string().min(3).default('Lastro <nao-responda@lastro.app>'),
+    MAIL_TRANSPORT: z.enum(['log', 'smtp', 'resend']).default('log'),
+    MAIL_FROM: z.string().min(3).default('Lastro <nao-responda@lastrofinance.com>'),
     SMTP_URL: z
       .string()
       .optional()
       .transform((value) => value?.trim() || undefined),
+    // Obrigatório com MAIL_TRANSPORT=resend — gere em resend.com/api-keys.
+    RESEND_API_KEY: z
+      .string()
+      .optional()
+      .transform((value) => value?.trim() || undefined),
+    // Dias de antecedência do aviso de "acesso prestes a vencer" (trial ou período pago).
+    BILLING_EXPIRY_NOTICE_DAYS: z.coerce.number().int().min(1).default(3),
 
     // Cobrança (AbacatePay): chave de API da loja e segredo do webhook (ambos obrigatórios,
     // sem default — usar um placeholder óbvio no .env até a conta real existir).
@@ -93,6 +100,10 @@ export const envSchema = z
   .refine((env) => env.MAIL_TRANSPORT !== 'smtp' || Boolean(env.SMTP_URL), {
     path: ['SMTP_URL'],
     error: 'SMTP_URL é obrigatório quando MAIL_TRANSPORT=smtp',
+  })
+  .refine((env) => env.MAIL_TRANSPORT !== 'resend' || Boolean(env.RESEND_API_KEY), {
+    path: ['RESEND_API_KEY'],
+    error: 'RESEND_API_KEY é obrigatório quando MAIL_TRANSPORT=resend',
   });
 
 export type Env = z.infer<typeof envSchema>;
