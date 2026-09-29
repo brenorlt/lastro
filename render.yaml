@@ -16,9 +16,13 @@ services:
       # e-mail e na validação de origem de /auth/refresh e /auth/logout.
       - key: APP_URL
         sync: false
-      # Connection string do Neon (ou outro Postgres externo). Formato:
-      # postgresql://usuario:senha@host/banco?sslmode=require
+      # Connection string do Neon (ou outro Postgres externo), de preferência a pooled
+      # (host termina em "-pooler"). Formato: postgresql://usuario:senha@host/banco?sslmode=require
       - key: DATABASE_URL
+        sync: false
+      # Mesmo banco, porém a conexão DIRETA (sem "-pooler" no host) — necessária só para
+      # `prisma migrate deploy` no start do container (ver comentário no schema.prisma).
+      - key: DIRECT_URL
         sync: false
       # Gerados automaticamente pelo Render ao criar o serviço; nunca reaproveite entre ambientes.
       - key: JWT_ACCESS_SECRET
@@ -41,4 +45,8 @@ services:
       - key: ABACATEPAY_API_KEY
         sync: false
       - key: ABACATEPAY_WEBHOOK_SECRET
+        sync: false
+      # ID do produto AbacatePay (ainda não consumido pelo código — reservado para quando
+      # o checkout por produto/plano fixo for implementado; hoje o fluxo é transparent charge).
+      - key: ABACATEPAY_PRODUCT_ID
         sync: false

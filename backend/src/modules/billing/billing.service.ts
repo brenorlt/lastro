@@ -30,7 +30,9 @@ interface WebhookBillingLike {
 }
 
 interface WebhookPayload {
-  id: string;
+  // A doc promete `id` no topo do payload pra dedupe, mas já chegou evento real sem
+  // esse campo — tratamos como opcional e caímos pro id da cobrança (ver handleWebhook).
+  id?: string;
   event: string;
   data: {
     checkout?: WebhookBillingLike;
@@ -151,21 +153,31 @@ export class BillingService {
     secretFromQuery: string | undefined,
     signature: string | undefined,
   ) {
-    if (secretFromQuery !== this.config.get('ABACATEPAY_WEBHOOK_SECRET')) {
+    // .trim() evita 401 silencioso por espaço/quebra de linha colado junto do valor
+    // ao configurar ABACATEPAY_WEBHOOK_SECRET no ambiente (erro comum em painéis tipo Render).
+    if (secretFromQuery !== this.config.get('ABACATEPAY_WEBHOOK_SECRET').trim()) {
+      this.logger.warn('webhook rejeitado: query secret não bate com ABACATEPAY_WEBHOOK_SECRET');
       throw new AppException(ErrorCode.WEBHOOK_SIGNATURE_INVALID);
     }
     if (!signature || !this.verifySignature(rawBody, signature)) {
+      this.logger.warn('webhook rejeitado: assinatura HMAC (x-webhook-signature) inválida');
       throw new AppException(ErrorCode.WEBHOOK_SIGNATURE_INVALID);
     }
 
     const payload = JSON.parse(rawBody.toString('utf8')) as WebhookPayload;
-    try {
-      await this.prisma.billingWebhookEvent.create({
-        data: { id: payload.id, event: payload.event },
-      });
-    } catch (error) {
-      if (isUniqueViolation(error)) return; // já processado (retentativa)
-      throw error;
+    const billing = payload.data.checkout ?? payload.data.transparent;
+    const dedupeId = payload.id ?? (billing ? `${payload.event}:${billing.id}` : undefined);
+    if (dedupeId) {
+      try {
+        await this.prisma.billingWebhookEvent.create({
+          data: { id: dedupeId, event: payload.event },
+        });
+      } catch (error) {
+        if (isUniqueViolation(error)) return; // já processado (retentativa)
+        throw error;
+      }
+    } else {
+      this.logger.warn({ event: payload.event }, 'webhook sem id nem cobrança — sem dedupe');
     }
 
     try {
