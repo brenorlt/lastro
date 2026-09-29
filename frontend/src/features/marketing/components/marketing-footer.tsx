@@ -1,17 +1,21 @@
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 
+const CONTACT_EMAIL = "brenotolentino.dev@gmail.com";
+const CNPJ = "54.798.718/0001-02";
+
 const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   { title: "Produto", links: [{ label: "Como funciona", href: "/#como-funciona" }, { label: "Segurança", href: "/#seguranca" }, { label: "Planos", href: "/#planos" }] },
   { title: "Conta", links: [{ label: "Entrar", href: "/entrar" }, { label: "Criar conta", href: "/cadastro" }] },
   { title: "Legal", links: [{ label: "Termos de uso", href: "/termos" }, { label: "Política de privacidade", href: "/privacidade" }] },
+  { title: "Contato", links: [{ label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` }] },
 ];
 
 export function MarketingFooter() {
   return (
     <footer className="border-t border-line py-14">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="grid gap-10 sm:grid-cols-[1.4fr_repeat(3,1fr)]">
+        <div className="grid gap-10 sm:grid-cols-[1.4fr_repeat(4,1fr)]">
           <div>
             <Logo />
             <p className="mt-4 max-w-xs text-sm text-ink-2">Gestão financeira pessoal para quem leva patrimônio a sério.</p>
@@ -30,7 +34,7 @@ export function MarketingFooter() {
           ))}
         </div>
         <div className="mt-12 flex flex-col gap-3 border-t border-line pt-6 text-xs text-ink-3 sm:flex-row sm:items-center sm:justify-between">
-          <p>© {new Date().getFullYear()} Lastro. Todos os direitos reservados.</p>
+          <p>© {new Date().getFullYear()} Lastro. Todos os direitos reservados. CNPJ {CNPJ}</p>
           <p>O Lastro não é uma instituição financeira, corretora ou consultoria de investimentos.</p>
         </div>
       </div>

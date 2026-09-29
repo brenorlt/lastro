@@ -14,6 +14,11 @@ export default function PrivacyPage() {
       <p>Senhas são guardadas apenas como hash (argon2id). Cada dispositivo conectado aparece em Perfil › Segurança e pode ser desconectado a qualquer momento. Registramos eventos de segurança, como logins e trocas de senha, com IP e navegador.</p>
       <h2>Seus direitos</h2>
       <p>Você pode exportar seus relatórios em CSV e PDF e excluir sua conta a qualquer momento em Perfil. A exclusão apaga definitivamente todos os seus dados financeiros e os registros de segurança associados a você; fica apenas um registro anônimo de que uma exclusão ocorreu, sem nome, e-mail ou IP.</p>
+      <h2>Contato</h2>
+      <p>
+        Dúvidas sobre privacidade ou solicitações relacionadas aos seus dados podem ser enviadas para{" "}
+        <a href="mailto:brenotolentino.dev@gmail.com" className="underline">brenotolentino.dev@gmail.com</a>.
+      </p>
     </LegalPage>
   );
 }

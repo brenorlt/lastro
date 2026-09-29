@@ -7,6 +7,7 @@ export function LegalPage({ title, updated, children }: { title: string; updated
       <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">Legal</p>
       <h1 className="mt-3 font-display text-4xl tracking-[-0.02em] text-ink">{title}</h1>
       <p className="mt-2 text-sm text-ink-3">Última atualização: {updated}</p>
+      <p className="mt-1 text-sm text-ink-3">Lastro — CNPJ 54.798.718/0001-02</p>
       <div role="note" className="mt-8 rounded-lg bg-warning-soft px-4 py-3 text-sm text-ink">
         Documento em elaboração. A versão definitiva, revisada juridicamente, será publicada antes do lançamento
         comercial do Lastro. Abaixo, um resumo fiel de como o produto funciona hoje.

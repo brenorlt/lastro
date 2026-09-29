@@ -14,6 +14,11 @@ export default function TermsPage() {
       <p>Projeções, cenários e prazos estimados são cálculos baseados nas premissas que você define. São referências para planejamento, nunca promessas.</p>
       <h2>Sua conta</h2>
       <p>Você é responsável por manter sua senha em segurança e pela exatidão das informações que registra. Pode encerrar e excluir sua conta a qualquer momento.</p>
+      <h2>Contato</h2>
+      <p>
+        Dúvidas sobre estes termos podem ser enviadas para{" "}
+        <a href="mailto:brenotolentino.dev@gmail.com" className="underline">brenotolentino.dev@gmail.com</a>.
+      </p>
     </LegalPage>
   );
 }
