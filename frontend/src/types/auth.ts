@@ -15,6 +15,8 @@ export interface NotificationPrefs {
 export type Currency = "BRL" | "USD" | "EUR";
 export type Locale = "pt-BR" | "en-US";
 
+export type UserRole = "USER" | "ADMIN";
+
 export interface User {
   id: string;
   name: string;
@@ -28,6 +30,7 @@ export interface User {
   theme: ThemePreference;
   onboardingCompleted: boolean;
   notificationPrefs: NotificationPrefs;
+  role: UserRole;
   createdAt: string;
 }
 

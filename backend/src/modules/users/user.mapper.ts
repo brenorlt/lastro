@@ -16,6 +16,7 @@ export function toUserDto(user: User): UserDto {
     timezone: user.timezone,
     theme: user.theme,
     onboardingCompleted: user.onboardingCompletedAt !== null,
+    role: user.role,
     notificationPrefs: mergeNotificationPrefs(user.notificationPrefs),
     createdAt: user.createdAt.toISOString(),
   };

@@ -251,6 +251,14 @@ enum BillingPaymentStatus {
   @@map("billing_payment_status")
 }
 
+// Sem cadastro público de admin — a promoção é manual, direto no banco.
+enum Role {
+  USER
+  ADMIN
+
+  @@map("role")
+}
+
 // ───────────────────────── Identidade / Auth ─────────────────────────
 
 model User {
@@ -262,6 +270,8 @@ model User {
   avatarUrl             String?   @map("avatar_url")
   // CPF/CNPJ (só dígitos) — exigido pela AbacatePay para emitir boleto.
   taxId                 String?   @map("tax_id") @db.VarChar(14)
+  // Sem rota pública para virar ADMIN — só via UPDATE direto no banco.
+  role                  Role      @default(USER)
   emailVerifiedAt       DateTime? @map("email_verified_at") @db.Timestamptz(3)
   currency              String    @default("BRL") @db.Char(3)
   locale                String    @default("pt-BR") @db.VarChar(10)

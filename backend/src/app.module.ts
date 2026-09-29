@@ -13,6 +13,7 @@ import { JwtAuthGuard } from './guards/jwt-auth.guard.js';
 import { SubscriptionGuard } from './guards/subscription.guard.js';
 import { ResponseInterceptor } from './interceptors/response.interceptor.js';
 import { AccountsModule } from './modules/accounts/accounts.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
 import { AssetsModule } from './modules/assets/assets.module.js';
@@ -53,6 +54,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module.j
     HealthModule,
     BillingModule,
     UsersModule,
+    AdminModule,
     AccountsModule,
     CategoriesModule,
     TagsModule,

@@ -33,5 +33,6 @@ export const config = {
     "/notificacoes/:path*",
     "/perfil/:path*",
     "/onboarding/:path*",
+    "/admin/:path*",
   ],
 };

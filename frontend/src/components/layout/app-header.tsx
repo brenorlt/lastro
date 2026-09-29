@@ -1,6 +1,6 @@
 "use client";
 
-import { Bell, Eye, EyeOff, LogOut, Monitor, Moon, Plus, Search, Sun, UserRound } from "lucide-react";
+import { Bell, Eye, EyeOff, LogOut, Monitor, Moon, Plus, Search, Shield, Sun, UserRound } from "lucide-react";
 import Link from "next/link";
 import { DropdownMenu as Menu } from "radix-ui";
 import { LogoMark } from "@/components/brand/logo";
@@ -18,7 +18,7 @@ import {
 import { Avatar, Kbd } from "@/components/ui/primitives";
 import { useThemePreference } from "@/features/profile/use-theme-preference";
 import { cn } from "@/lib/cn";
-import type { ThemePreference } from "@/types/auth";
+import type { ThemePreference, UserRole } from "@/types/auth";
 import { useUiStore } from "@/stores/ui-store";
 
 const THEMES: { value: ThemePreference; label: string; icon: typeof Monitor }[] = [
@@ -27,7 +27,11 @@ const THEMES: { value: ThemePreference; label: string; icon: typeof Monitor }[] 
   { value: "DARK", label: "Escuro", icon: Moon },
 ];
 
-export function AppHeader({ user }: { user: { name: string; email: string; avatarUrl?: string | null } }) {
+export function AppHeader({
+  user,
+}: {
+  user: { name: string; email: string; avatarUrl?: string | null; role?: UserRole };
+}) {
   const { theme, setTheme } = useThemePreference();
   const privacyMode = useUiStore((s) => s.privacyMode);
   const togglePrivacy = useUiStore((s) => s.togglePrivacy);
@@ -94,6 +98,13 @@ export function AppHeader({ user }: { user: { name: string; email: string; avata
                   <UserRound aria-hidden /> Perfil e preferências
                 </Link>
               </DropdownMenuItem>
+              {user.role === "ADMIN" && (
+                <DropdownMenuItem asChild>
+                  <Link href="/admin">
+                    <Shield aria-hidden /> Painel admin
+                  </Link>
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuLabel>Aparência</DropdownMenuLabel>
               <Menu.RadioGroup value={theme} onValueChange={(v) => void setTheme(v as ThemePreference)}>

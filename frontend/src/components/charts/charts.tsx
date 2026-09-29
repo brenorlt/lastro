@@ -63,6 +63,10 @@ interface CartesianProps<K extends string> {
   valueFormatter?: (v: number) => string;
   /** Linhas podem usar domínio automático; áreas e barras sempre partem do zero. */
   domain?: [number | "auto" | "dataMin", number | "auto" | "dataMax"];
+  /** Formata os rótulos do eixo Y. Padrão: moeda compacta (a maioria dos gráficos é monetária). */
+  yTickFormatter?: (v: number) => string;
+  /** false para séries de contagem (evita ticks fracionários tipo "0,5"). Padrão: true (moeda). */
+  yAllowDecimals?: boolean;
 }
 
 export function AreaChart<K extends string>({ data, xKey, series, height = 240, ariaLabel, valueFormatter }: CartesianProps<K>) {
@@ -107,14 +111,23 @@ export function AreaChart<K extends string>({ data, xKey, series, height = 240, 
   );
 }
 
-export function BarChart<K extends string>({ data, xKey, series, height = 240, ariaLabel, valueFormatter }: CartesianProps<K>) {
+export function BarChart<K extends string>({
+  data,
+  xKey,
+  series,
+  height = 240,
+  ariaLabel,
+  valueFormatter,
+  yTickFormatter = compact,
+  yAllowDecimals = true,
+}: CartesianProps<K>) {
   return (
     <div role="img" aria-label={ariaLabel} style={{ height }}>
       <ResponsiveContainer width="100%" height="100%">
         <RBar data={data} margin={{ top: 8, right: 12, bottom: 0, left: 4 }} barGap={2} barCategoryGap="28%">
           <CartesianGrid vertical={false} stroke="var(--grid)" />
           <XAxis dataKey={xKey} {...axisProps} dy={8} />
-          <YAxis {...axisProps} width={64} tickFormatter={compact} />
+          <YAxis {...axisProps} width={64} tickFormatter={yTickFormatter} allowDecimals={yAllowDecimals} />
           <Tooltip
             cursor={{ fill: "var(--surface-sunken)" }}
             content={(p) => <ChartTooltip active={p.active} payload={p.payload} label={p.label} valueFormatter={valueFormatter} />}

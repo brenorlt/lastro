@@ -29,7 +29,9 @@ export function AppShell({ children }: { children: ReactNode }) {
       </a>
       <Sidebar />
       <div className="flex min-w-0 flex-1 flex-col">
-        <AppHeader user={{ name: user?.name ?? "", email: user?.email ?? "", avatarUrl: user?.avatarUrl }} />
+        <AppHeader
+          user={{ name: user?.name ?? "", email: user?.email ?? "", avatarUrl: user?.avatarUrl, role: user?.role }}
+        />
         <main
           id="conteudo"
           tabIndex={-1}

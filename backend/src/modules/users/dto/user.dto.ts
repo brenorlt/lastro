@@ -30,6 +30,7 @@ export class UserDto {
   @ApiProperty({ example: 'America/Sao_Paulo' }) timezone: string;
   @ApiProperty({ enum: ['SYSTEM', 'LIGHT', 'DARK'] }) theme: 'SYSTEM' | 'LIGHT' | 'DARK';
   @ApiProperty() onboardingCompleted: boolean;
+  @ApiProperty({ enum: ['USER', 'ADMIN'] }) role: 'USER' | 'ADMIN';
   @ApiProperty({ type: NotificationPrefsDto }) notificationPrefs: NotificationPrefsDto;
   @ApiProperty({ format: 'date-time' }) createdAt: string;
 }
