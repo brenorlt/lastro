@@ -10,12 +10,6 @@ export class BillingStatusDto {
   @ApiProperty({ type: String, nullable: true, format: 'date-time' })
   currentPeriodEnd: string | null;
 
-  @ApiProperty()
-  cancelAtPeriodEnd: boolean;
-
-  @ApiProperty()
-  hasRecurringSubscription: boolean;
-
   @ApiProperty({ example: '25.00' })
   planPrice: string;
 }
@@ -34,9 +28,22 @@ export class PixCheckoutDto {
   expiresAt: string;
 }
 
-export class HostedCheckoutDto {
-  @ApiProperty({
-    description: 'URL do checkout hospedado da AbacatePay para redirecionar o usuário',
-  })
+export class BoletoCheckoutDto {
+  @ApiProperty({ example: 'bill_char_z2rSk6042t1mCKgGgeBpJe1u' })
+  id: string;
+
+  @ApiProperty({ description: 'Linha digitável do boleto' })
+  barCode: string;
+
+  @ApiProperty({ description: 'URL para visualizar e imprimir o boleto' })
   url: string;
+
+  @ApiProperty({ description: 'Pix alternativo — código copia-e-cola' })
+  brCode: string;
+
+  @ApiProperty({ description: 'Pix alternativo — QR Code em base64 (data:image/png;base64,...)' })
+  brCodeBase64: string;
+
+  @ApiProperty({ format: 'date-time' })
+  expiresAt: string;
 }

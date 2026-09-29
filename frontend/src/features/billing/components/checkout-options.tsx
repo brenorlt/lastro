@@ -1,12 +1,12 @@
 "use client";
 
-import { Check, Copy, CreditCard, QrCode, Repeat } from "lucide-react";
+import { Barcode, Copy, ExternalLink, QrCode } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import { Badge, Card, CardBody, CardHeader } from "@/components/ui/primitives";
+import { Card, CardBody, CardHeader } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toaster";
 import { userMessage } from "@/services/api-error";
-import { useBillingStatus, useCheckoutCard, useCheckoutPix, useCheckoutSubscription } from "../api";
+import { useBillingStatus, useCheckoutBoleto, useCheckoutPix } from "../api";
 
 function PixPanel({ planPrice }: { planPrice: string }) {
   const checkout = useCheckoutPix();
@@ -47,20 +47,61 @@ function PixPanel({ planPrice }: { planPrice: string }) {
   );
 }
 
-function redirect(url: string) {
-  window.location.href = url;
+function BoletoPanel({ planPrice }: { planPrice: string }) {
+  const checkout = useCheckoutBoleto();
+  // O boleto pode levar até 2 dias úteis para compensar após o pagamento.
+  useBillingStatus({ refetchInterval: checkout.data ? 15000 : false });
+
+  if (!checkout.data) {
+    return (
+      <Button
+        className="w-full"
+        loading={checkout.isPending}
+        onClick={() => checkout.mutate(undefined, { onError: (err) => toast.error(userMessage(err)) })}
+      >
+        Gerar boleto de {planPrice}
+      </Button>
+    );
+  }
+
+  const copy = async () => {
+    await navigator.clipboard.writeText(checkout.data.barCode);
+    toast.success("Linha digitável copiada");
+  };
+
+  return (
+    <div className="space-y-4 text-center">
+      <p className="break-all rounded-md bg-surface-2 px-3 py-2 font-mono text-xs text-ink-2 ring-1 ring-line">
+        {checkout.data.barCode}
+      </p>
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Button variant="secondary" className="w-full" onClick={() => void copy()}>
+          <Copy aria-hidden /> Copiar linha digitável
+        </Button>
+        <a
+          href={checkout.data.url}
+          target="_blank"
+          rel="noreferrer"
+          className="inline-flex w-full items-center justify-center gap-2 rounded-md px-3 py-2 text-sm font-medium ring-1 ring-line hover:bg-surface-2"
+        >
+          <ExternalLink aria-hidden className="size-4" /> Ver boleto
+        </a>
+      </div>
+      <p className="text-xs text-ink-3">
+        Após o pagamento, a compensação pode levar até 2 dias úteis. O acesso libera sozinho aqui.
+      </p>
+    </div>
+  );
 }
 
 export function CheckoutOptions() {
   const status = useBillingStatus();
-  const [method, setMethod] = useState<"pix" | "card" | "subscription" | null>(null);
-  const card = useCheckoutCard();
-  const subscription = useCheckoutSubscription();
+  const [method, setMethod] = useState<"pix" | "boleto" | null>(null);
 
   const planPrice = status.data ? `R$ ${status.data.planPrice.replace(".", ",")}` : "R$ 25,00";
 
   return (
-    <div className="grid gap-4 sm:grid-cols-3">
+    <div className="grid gap-4 sm:grid-cols-2">
       <Card className={method === "pix" ? "ring-2 ring-accent" : undefined}>
         <CardHeader
           title={
@@ -81,67 +122,23 @@ export function CheckoutOptions() {
         </CardBody>
       </Card>
 
-      <Card>
+      <Card className={method === "boleto" ? "ring-2 ring-accent" : undefined}>
         <CardHeader
           title={
             <span className="flex items-center gap-2">
-              <CreditCard className="size-4 text-ink-3" aria-hidden /> Cartão
+              <Barcode className="size-4 text-ink-3" aria-hidden /> Boleto
             </span>
           }
           description={`${planPrice} · libera 30 dias`}
         />
         <CardBody>
-          <Button
-            variant="secondary"
-            className="w-full"
-            loading={card.isPending}
-            onClick={() => {
-              setMethod("card");
-              card.mutate(undefined, {
-                onSuccess: (data) => redirect(data.url),
-                onError: (err) => toast.error(userMessage(err)),
-              });
-            }}
-          >
-            Pagar com cartão
-          </Button>
-        </CardBody>
-      </Card>
-
-      <Card className="relative ring-2 ring-accent">
-        <Badge tone="accent" className="absolute -top-3 left-5">
-          Recomendado
-        </Badge>
-        <CardHeader
-          title={
-            <span className="flex items-center gap-2">
-              <Repeat className="size-4 text-ink-3" aria-hidden /> Cartão com recorrência
-            </span>
-          }
-          description={`${planPrice}/mês · renova sozinho`}
-        />
-        <CardBody className="space-y-3">
-          <ul className="space-y-1.5 text-xs text-ink-2">
-            <li className="flex items-center gap-2">
-              <Check className="size-3.5 shrink-0 text-positive" aria-hidden /> Nunca mais fica bloqueado por esquecimento
-            </li>
-            <li className="flex items-center gap-2">
-              <Check className="size-3.5 shrink-0 text-positive" aria-hidden /> Cancele quando quiser, sem multa
-            </li>
-          </ul>
-          <Button
-            className="w-full"
-            loading={subscription.isPending}
-            onClick={() => {
-              setMethod("subscription");
-              subscription.mutate(undefined, {
-                onSuccess: (data) => redirect(data.url),
-                onError: (err) => toast.error(userMessage(err)),
-              });
-            }}
-          >
-            Assinar com cartão
-          </Button>
+          {method === "boleto" ? (
+            <BoletoPanel planPrice={planPrice} />
+          ) : (
+            <Button variant="secondary" className="w-full" onClick={() => setMethod("boleto")}>
+              Pagar com boleto
+            </Button>
+          )}
         </CardBody>
       </Card>
     </div>

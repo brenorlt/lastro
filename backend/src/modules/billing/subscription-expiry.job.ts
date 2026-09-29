@@ -6,9 +6,7 @@ const JOB_INTERVAL_MS = 60 * 60 * 1000;
 
 /**
  * Bloqueia assinaturas vencidas sem pagamento: trial expirado, ou período avulso
- * (Pix/Cartão sem recorrência) que passou sem renovação manual, ou recorrência
- * cancelada (`cancelAtPeriodEnd`) que chegou ao fim do ciclo já pago. Assinaturas
- * recorrentes ativas em dia nunca caem aqui — só saem de ACTIVE via webhook.
+ * (Pix/boleto, sem renovação automática) que passou sem um novo pagamento.
  * Desligado em NODE_ENV=test; `run(now)` exposto para testes.
  */
 @Injectable()
@@ -38,11 +36,7 @@ export class SubscriptionExpiryJobService implements OnModuleInit, OnModuleDestr
       data: { status: 'BLOCKED' },
     });
     const periods = await this.prisma.subscription.updateMany({
-      where: {
-        status: 'ACTIVE',
-        currentPeriodEnd: { lte: now },
-        OR: [{ cancelAtPeriodEnd: true }, { abacatepaySubscriptionId: null }],
-      },
+      where: { status: 'ACTIVE', currentPeriodEnd: { lte: now } },
       data: { status: 'BLOCKED' },
     });
     if (trials.count || periods.count) {

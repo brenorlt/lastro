@@ -10,11 +10,6 @@ interface AbacatePayEnvelope<T> {
   error: string | null;
 }
 
-export interface AbacatePayProduct {
-  id: string;
-  externalId: string;
-}
-
 export interface AbacatePayCustomer {
   id: string;
 }
@@ -23,17 +18,14 @@ export interface AbacatePayTransparentCharge {
   id: string;
   amount: number;
   status: string;
+  // Pix e Pix alternativo (também presente em cobranças de boleto).
   brCode: string;
   brCodeBase64: string;
   expiresAt: string;
+  // Só presentes quando method = "BOLETO".
+  barCode?: string;
+  url?: string;
 }
-
-export interface AbacatePayHostedCheckout {
-  id: string;
-  url: string;
-}
-
-export type AbacatePayCycle = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUALLY' | 'ANNUALLY';
 
 /**
  * Cliente HTTP fino para a API v2 da AbacatePay (https://docs.abacatepay.com).
@@ -73,88 +65,24 @@ export class AbacatePayClient {
     return envelope.data;
   }
 
-  /** Idempotente: procura por `externalId` em /products/list antes de criar. */
-  async ensureProduct(input: {
-    externalId: string;
-    name: string;
-    priceCents: number;
-    cycle?: AbacatePayCycle;
-  }): Promise<AbacatePayProduct> {
-    const existing = await this.call<AbacatePayProduct[]>('GET', '/products/list');
-    const found = existing.find((p) => p.externalId === input.externalId);
-    if (found) return found;
-    return this.call<AbacatePayProduct>('POST', '/products/create', {
-      externalId: input.externalId,
-      name: input.name,
-      price: input.priceCents,
-      currency: 'BRL',
-      cycle: input.cycle,
-    });
-  }
-
   async createCustomer(input: { email: string; name: string }): Promise<AbacatePayCustomer> {
     return this.call<AbacatePayCustomer>('POST', '/customers/create', input);
   }
 
-  async createPixCharge(input: {
+  /** Cobrança avulsa via Pix ou boleto (o boleto sempre vem com Pix alternativo). */
+  async createTransparentCharge(input: {
+    method: 'PIX' | 'BOLETO';
     amountCents: number;
     externalId: string;
     description: string;
   }): Promise<AbacatePayTransparentCharge> {
     return this.call<AbacatePayTransparentCharge>('POST', '/transparents/create', {
-      method: 'PIX',
+      method: input.method,
       data: {
         amount: input.amountCents,
         description: input.description,
         externalId: input.externalId,
       },
     });
-  }
-
-  async checkPixCharge(id: string): Promise<{ status: string }> {
-    return this.call<{ id: string; status: string }>(
-      'GET',
-      `/transparents/check?id=${encodeURIComponent(id)}`,
-    );
-  }
-
-  async createCardCheckout(input: {
-    productId: string;
-    customerId: string;
-    externalId: string;
-    returnUrl: string;
-    completionUrl: string;
-  }): Promise<AbacatePayHostedCheckout> {
-    return this.call<AbacatePayHostedCheckout>('POST', '/checkouts/create', {
-      items: [{ id: input.productId, quantity: 1 }],
-      methods: ['CARD'],
-      card: { maxInstallments: 1 },
-      customerId: input.customerId,
-      externalId: input.externalId,
-      returnUrl: input.returnUrl,
-      completionUrl: input.completionUrl,
-    });
-  }
-
-  async createSubscriptionCheckout(input: {
-    productId: string;
-    customerId: string;
-    externalId: string;
-    returnUrl: string;
-    completionUrl: string;
-  }): Promise<AbacatePayHostedCheckout> {
-    return this.call<AbacatePayHostedCheckout>('POST', '/subscriptions/create', {
-      items: [{ id: input.productId, quantity: 1 }],
-      methods: ['CARD'],
-      card: { maxInstallments: 1 },
-      customerId: input.customerId,
-      externalId: input.externalId,
-      returnUrl: input.returnUrl,
-      completionUrl: input.completionUrl,
-    });
-  }
-
-  async cancelSubscription(abacatepaySubscriptionId: string): Promise<void> {
-    await this.call('POST', '/subscriptions/cancel', { id: abacatepaySubscriptionId });
   }
 }

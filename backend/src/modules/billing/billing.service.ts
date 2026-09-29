@@ -7,7 +7,7 @@ import { AppConfigService } from '../../config/app-config.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
 import type { Subscription } from '../../generated/prisma/client.js';
 import { AbacatePayClient } from './abacatepay.client.js';
-import type { BillingStatusDto, HostedCheckoutDto, PixCheckoutDto } from './billing.dto.js';
+import type { BillingStatusDto, BoletoCheckoutDto, PixCheckoutDto } from './billing.dto.js';
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 const CYCLE_DAYS = 30;
@@ -17,9 +17,6 @@ const CYCLE_DAYS = 30;
 // AbacatePay; a defesa por conta é o `secret` que definimos na query string do webhook.
 const ABACATEPAY_HMAC_KEY =
   't9dXRhHHo3yDEj5pVDYz0frf7q6bMKyMRmxxCPIPp3RCplBfXRxqlC6ZpiWmOqj4L63qEaeUOtrCI8P0VMUgo6iIga2ri9ogaHFs0WIIywSMg0q7RmBfybe1E5XJcfC4IW3alNqym0tXoAKkzvfEjZxV6bE0oG2zJrNNYmUCKZyV0KZ3JS8Votf9EAWWYdiDkMkpbMdPggfh1EqHlVkMiTady6jOR3hyzGEHrIz2Ret0xHKMbiqkr9HS1JhNHDX9';
-
-const PRODUCT_ONE_TIME_EXTERNAL_ID = 'lastro-completo-avulso';
-const PRODUCT_SUBSCRIPTION_EXTERNAL_ID = 'lastro-completo-assinatura';
 
 interface WebhookBillingLike {
   id: string;
@@ -34,21 +31,12 @@ interface WebhookPayload {
   data: {
     checkout?: WebhookBillingLike;
     transparent?: WebhookBillingLike;
-    payment?: { id: string; externalId?: string | null; amount: number };
-    subscription?: {
-      id: string;
-      amount: number;
-      method: 'PIX' | 'CARD';
-      status: string;
-      cancelledDueTo?: string | null;
-    };
   };
 }
 
 @Injectable()
 export class BillingService {
   private readonly logger = new Logger(BillingService.name);
-  private readonly productIdCache = new Map<string, string>();
 
   constructor(
     private readonly prisma: PrismaService,
@@ -71,26 +59,8 @@ export class BillingService {
       status: subscription.status,
       trialEndsAt: subscription.trialEndsAt.toISOString(),
       currentPeriodEnd: subscription.currentPeriodEnd?.toISOString() ?? null,
-      cancelAtPeriodEnd: subscription.cancelAtPeriodEnd,
-      hasRecurringSubscription:
-        Boolean(subscription.abacatepaySubscriptionId) && !subscription.cancelAtPeriodEnd,
       planPrice: this.centsToAmount(this.planPriceCents).toFixed(2),
     };
-  }
-
-  private async ensureProductId(kind: 'one-time' | 'subscription'): Promise<string> {
-    const externalId =
-      kind === 'one-time' ? PRODUCT_ONE_TIME_EXTERNAL_ID : PRODUCT_SUBSCRIPTION_EXTERNAL_ID;
-    const cached = this.productIdCache.get(externalId);
-    if (cached) return cached;
-    const product = await this.abacatepay.ensureProduct({
-      externalId,
-      name: 'Lastro Completo',
-      priceCents: this.planPriceCents,
-      cycle: kind === 'subscription' ? 'MONTHLY' : undefined,
-    });
-    this.productIdCache.set(externalId, product.id);
-    return product.id;
   }
 
   private async ensureCustomerId(userId: string): Promise<string> {
@@ -109,8 +79,32 @@ export class BillingService {
   }
 
   async checkoutPix(userId: string): Promise<PixCheckoutDto> {
+    const charge = await this.createOneTimeCharge(userId, 'PIX');
+    return {
+      id: charge.id,
+      brCode: charge.brCode,
+      brCodeBase64: charge.brCodeBase64,
+      expiresAt: charge.expiresAt,
+    };
+  }
+
+  async checkoutBoleto(userId: string): Promise<BoletoCheckoutDto> {
+    const charge = await this.createOneTimeCharge(userId, 'BOLETO');
+    return {
+      id: charge.id,
+      // Sempre presentes quando method = "BOLETO" — garantido pela AbacatePay.
+      barCode: charge.barCode!,
+      url: charge.url!,
+      brCode: charge.brCode,
+      brCodeBase64: charge.brCodeBase64,
+      expiresAt: charge.expiresAt,
+    };
+  }
+
+  private async createOneTimeCharge(userId: string, method: 'PIX' | 'BOLETO') {
     await this.ensureCustomerId(userId);
-    const charge = await this.abacatepay.createPixCharge({
+    const charge = await this.abacatepay.createTransparentCharge({
+      method,
       amountCents: this.planPriceCents,
       externalId: userId,
       description: 'Lastro Completo - 30 dias de acesso',
@@ -120,77 +114,18 @@ export class BillingService {
       data: {
         userId,
         subscriptionId: subscription.id,
-        method: 'PIX',
+        method,
         status: 'PENDING',
         amount: this.centsToAmount(this.planPriceCents),
         abacatepayChargeId: charge.id,
         pixQrCode: charge.brCode,
         pixQrCodeImage: charge.brCodeBase64,
+        barCode: charge.barCode,
+        checkoutUrl: charge.url,
         expiresAt: new Date(charge.expiresAt),
       },
     });
-    return {
-      id: charge.id,
-      brCode: charge.brCode,
-      brCodeBase64: charge.brCodeBase64,
-      expiresAt: charge.expiresAt,
-    };
-  }
-
-  async checkoutCard(userId: string): Promise<HostedCheckoutDto> {
-    const [customerId, productId] = await Promise.all([
-      this.ensureCustomerId(userId),
-      this.ensureProductId('one-time'),
-    ]);
-    const appUrl = this.config.get('APP_URL');
-    const checkout = await this.abacatepay.createCardCheckout({
-      productId,
-      customerId,
-      externalId: userId,
-      returnUrl: `${appUrl}/assinatura`,
-      completionUrl: `${appUrl}/assinatura?pago=1`,
-    });
-    const subscription = await this.prisma.subscription.findUniqueOrThrow({ where: { userId } });
-    await this.prisma.payment.create({
-      data: {
-        userId,
-        subscriptionId: subscription.id,
-        method: 'CARD',
-        status: 'PENDING',
-        amount: this.centsToAmount(this.planPriceCents),
-        abacatepayChargeId: checkout.id,
-        checkoutUrl: checkout.url,
-      },
-    });
-    return { url: checkout.url };
-  }
-
-  async checkoutSubscription(userId: string): Promise<HostedCheckoutDto> {
-    const [customerId, productId] = await Promise.all([
-      this.ensureCustomerId(userId),
-      this.ensureProductId('subscription'),
-    ]);
-    const appUrl = this.config.get('APP_URL');
-    const checkout = await this.abacatepay.createSubscriptionCheckout({
-      productId,
-      customerId,
-      externalId: userId,
-      returnUrl: `${appUrl}/assinatura`,
-      completionUrl: `${appUrl}/assinatura?pago=1`,
-    });
-    return { url: checkout.url };
-  }
-
-  async cancelSubscription(userId: string): Promise<void> {
-    const subscription = await this.prisma.subscription.findUniqueOrThrow({ where: { userId } });
-    if (!subscription.abacatepaySubscriptionId || subscription.cancelAtPeriodEnd) return;
-    await this.abacatepay.cancelSubscription(subscription.abacatepaySubscriptionId);
-    // Mantém acesso ACTIVE até currentPeriodEnd (sem multa/carência) — o job de expiração
-    // bloqueia sozinho quando o ciclo já pago terminar.
-    await this.prisma.subscription.update({
-      where: { userId },
-      data: { cancelAtPeriodEnd: true },
-    });
+    return charge;
   }
 
   /** Verifica os dois mecanismos de segurança documentados e roteia o evento. */
@@ -238,11 +173,6 @@ export class BillingService {
       case 'checkout.completed':
       case 'transparent.completed':
         return this.onOneTimePaid(payload);
-      case 'subscription.completed':
-      case 'subscription.renewed':
-        return this.onSubscriptionPaid(payload);
-      case 'subscription.cancelled':
-        return this.onSubscriptionCancelled(payload);
       default:
         return;
     }
@@ -256,7 +186,7 @@ export class BillingService {
       this.logger.warn({ event: payload.event, billingId: billing.id }, 'sem externalId');
       return;
     }
-    const method = billing.methods?.[0] === 'PIX' ? 'PIX' : 'CARD';
+    const method = billing.methods?.[0] === 'BOLETO' ? 'BOLETO' : 'PIX';
     const now = new Date();
 
     await this.prisma.$transaction(async (tx) => {
@@ -284,60 +214,6 @@ export class BillingService {
           currentPeriodEnd: nextPeriodEnd(subscription, now),
         },
       });
-    });
-  }
-
-  private async onSubscriptionPaid(payload: WebhookPayload): Promise<void> {
-    const sub = payload.data.subscription;
-    if (!sub) return;
-    const userId = payload.data.checkout?.externalId ?? payload.data.payment?.externalId;
-    if (!userId) {
-      this.logger.warn({ event: payload.event, subscriptionId: sub.id }, 'sem externalId');
-      return;
-    }
-    const now = new Date();
-
-    await this.prisma.$transaction(async (tx) => {
-      const subscription = await tx.subscription.findUnique({ where: { userId } });
-      if (!subscription) return;
-
-      const payment = payload.data.payment;
-      if (payment) {
-        await tx.payment.upsert({
-          where: { abacatepayChargeId: payment.id },
-          update: { status: 'PAID', paidAt: now },
-          create: {
-            userId,
-            subscriptionId: subscription.id,
-            method: sub.method,
-            status: 'PAID',
-            amount: this.centsToAmount(payment.amount),
-            abacatepayChargeId: payment.id,
-            paidAt: now,
-          },
-        });
-      }
-
-      await tx.subscription.update({
-        where: { id: subscription.id },
-        data: {
-          status: 'ACTIVE',
-          abacatepaySubscriptionId: sub.id,
-          cancelAtPeriodEnd: false,
-          currentPeriodEnd: nextPeriodEnd(subscription, now),
-        },
-      });
-    });
-  }
-
-  private async onSubscriptionCancelled(payload: WebhookPayload): Promise<void> {
-    const sub = payload.data.subscription;
-    // Cancelamento manual (via /billing/cancel-subscription) já foi tratado de forma síncrona;
-    // só o cancelamento automático (esgotou tentativas de cobrança) precisa bloquear aqui.
-    if (!sub || sub.cancelledDueTo !== 'max_payment_retries_exceeded') return;
-    await this.prisma.subscription.updateMany({
-      where: { abacatepaySubscriptionId: sub.id },
-      data: { status: 'BLOCKED', currentPeriodEnd: new Date() },
     });
   }
 }

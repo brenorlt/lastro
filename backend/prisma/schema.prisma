@@ -236,7 +236,7 @@ enum SubscriptionStatus {
 
 enum BillingPaymentMethod {
   PIX
-  CARD
+  BOLETO
 
   @@map("billing_payment_method")
 }
@@ -707,17 +707,16 @@ model EmergencyFund {
 // ───────────────────────── Cobrança (AbacatePay) ─────────────────────────
 
 model Subscription {
-  id                       String             @id @default(uuid()) @db.Uuid
-  userId                   String             @unique @map("user_id") @db.Uuid
-  status                   SubscriptionStatus @default(TRIALING)
-  trialEndsAt              DateTime           @map("trial_ends_at") @db.Timestamptz(3)
-  currentPeriodEnd         DateTime?          @map("current_period_end") @db.Timestamptz(3)
-  // true quando o usuário cancelou a recorrência, mas mantém acesso até currentPeriodEnd.
-  cancelAtPeriodEnd        Boolean            @default(false) @map("cancel_at_period_end")
-  abacatepayCustomerId     String?            @unique @map("abacatepay_customer_id")
-  abacatepaySubscriptionId String?            @unique @map("abacatepay_subscription_id")
-  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt                DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  id                   String             @id @default(uuid()) @db.Uuid
+  userId               String             @unique @map("user_id") @db.Uuid
+  status               SubscriptionStatus @default(TRIALING)
+  trialEndsAt          DateTime           @map("trial_ends_at") @db.Timestamptz(3)
+  // Até quando o acesso pago em vigor cobre — Pix e boleto são avulsos, sem renovação
+  // automática; vencido esse prazo, o job de expiração bloqueia até um novo pagamento.
+  currentPeriodEnd     DateTime?          @map("current_period_end") @db.Timestamptz(3)
+  abacatepayCustomerId String?            @unique @map("abacatepay_customer_id")
+  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   payments Payment[]
@@ -738,6 +737,7 @@ model Payment {
   pixQrCode          String?              @map("pix_qr_code")
   pixQrCodeImage     String?              @map("pix_qr_code_image")
   checkoutUrl        String?              @map("checkout_url")
+  barCode            String?              @map("bar_code")
   paidAt             DateTime?            @map("paid_at") @db.Timestamptz(3)
   expiresAt          DateTime?            @map("expires_at") @db.Timestamptz(3)
   createdAt          DateTime             @default(now()) @map("created_at") @db.Timestamptz(3)

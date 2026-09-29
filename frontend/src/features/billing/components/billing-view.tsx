@@ -53,21 +53,16 @@ export function BillingView() {
         <Card className="mb-6">
           <CardBody className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-ink">
-                {s.hasRecurringSubscription ? "Assinatura ativa (renova sozinha)" : "Acesso ativo"}
-              </p>
+              <p className="text-sm font-medium text-ink">Acesso ativo</p>
               <p className="text-sm text-ink-2">
-                {s.currentPeriodEnd
-                  ? `${s.hasRecurringSubscription ? "Próxima cobrança" : "Vence"} em ${formatDate(s.currentPeriodEnd)}`
-                  : null}
-                {s.cancelAtPeriodEnd && " · cancelada, acesso mantido até o fim do ciclo"}
+                {s.currentPeriodEnd ? `Vence em ${formatDate(s.currentPeriodEnd)}` : null}
               </p>
             </div>
           </CardBody>
         </Card>
       )}
 
-      {!isActive || s.cancelAtPeriodEnd ? <CheckoutOptions /> : null}
+      {!isActive ? <CheckoutOptions /> : null}
     </>
   );
 }
