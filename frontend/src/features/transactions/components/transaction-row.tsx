@@ -67,7 +67,7 @@ export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onDup
           {t.installment && <span className="num shrink-0 rounded-[4px] bg-surface-sunken px-1.5 text-2xs text-ink-2">{t.installment.number}/{t.installment.total}</span>}
           {t.recurring && <Repeat className="size-3 shrink-0" aria-label="Recorrente" />}
           {t.tags.length > 0 && <span className="hidden truncate sm:inline">· {t.tags.map((x) => `#${x.name}`).join(" ")}</span>}
-          {pending && !t.creditCard && <PaymentStatusBadge transaction={t} className="shrink-0" />}
+          {!t.creditCard && <PaymentStatusBadge transaction={t} className="shrink-0" />}
         </div>
       </div>
 

@@ -181,7 +181,7 @@ export function TransactionsSection({ filters }: { filters: ReportFilters }) {
           {data.map((t) => (
             <TR key={t.id}>
               <TD className="h-11 whitespace-nowrap text-ink-2">{dayLabel(t.date)}</TD>
-              <TD className="h-11">{t.description}{t.status === "PENDING" && <PaymentStatusBadge transaction={t} className="ml-2" />}</TD>
+              <TD className="h-11">{t.description}{!t.creditCard && <PaymentStatusBadge transaction={t} className="ml-2" />}</TD>
               <TD className="h-11 text-ink-2">{t.category?.name ?? (t.type === "TRANSFER" ? "Transferência" : "—")}</TD>
               <TD className="h-11 text-ink-2">{t.account?.name ?? t.creditCard?.name ?? t.transferAccount?.name}</TD>
               <TD align="right" className="h-11"><Amount value={t.amount} flow={t.type === "INCOME" ? "income" : t.type === "EXPENSE" ? "expense" : "neutral"} /></TD>

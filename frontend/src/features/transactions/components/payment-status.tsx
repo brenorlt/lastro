@@ -19,10 +19,14 @@ export function PaymentStatusBadge({
   className?: string;
 }) {
   const kind = paymentStatusKind(t);
-  if (kind === "paid") return null;
-  const label = kind === "scheduled" ? "Agendado" : t.type === "INCOME" ? "A receber" : "A pagar";
+  const label =
+    kind === "paid"
+      ? t.type === "INCOME" ? "Recebido" : t.type === "TRANSFER" ? "Transferido" : "Pago"
+      : kind === "scheduled"
+        ? "Agendado"
+        : t.type === "INCOME" ? "A receber" : "A pagar";
   return (
-    <Badge tone={kind === "scheduled" ? "accent" : "negative"} className={className}>
+    <Badge tone={kind === "paid" ? "positive" : kind === "scheduled" ? "accent" : "negative"} className={className}>
       {label}
     </Badge>
   );
