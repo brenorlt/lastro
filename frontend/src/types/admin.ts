@@ -1,7 +1,7 @@
 import type { UserRole } from "./auth";
 
 export type SubscriptionStatus = "TRIALING" | "ACTIVE" | "BLOCKED" | "CANCELLED";
-export type BillingPaymentMethod = "PIX" | "BOLETO";
+export type BillingPaymentMethod = "PIX" | "BOLETO" | "CARD";
 export type BillingPaymentStatus = "PENDING" | "PAID" | "FAILED" | "EXPIRED" | "REFUNDED";
 
 export interface AdminPayment {
@@ -48,3 +48,9 @@ export interface AdminOverview {
   signupsByDay: SignupsByDay[];
   recentPayments: AdminPayment[];
 }
+
+export const PAYMENT_METHOD_LABEL: Record<BillingPaymentMethod, string> = {
+  PIX: "Pix",
+  BOLETO: "Boleto",
+  CARD: "Cartão",
+};

@@ -71,7 +71,8 @@ export async function createTestApp(extra: ModuleMetadata = {}): Promise<TestCon
     .useValue(mail)
     .compile();
 
-  const app = moduleRef.createNestApplication<NestExpressApplication>();
+  // Igual ao main.ts: o webhook da AbacatePay valida o HMAC sobre o corpo cru.
+  const app = moduleRef.createNestApplication<NestExpressApplication>({ rawBody: true });
   configureApp(app);
   await app.init();
 

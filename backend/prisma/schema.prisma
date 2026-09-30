@@ -243,6 +243,7 @@ enum SubscriptionStatus {
 enum BillingPaymentMethod {
   PIX
   BOLETO
+  CARD
 
   @@map("billing_payment_method")
 }
@@ -743,19 +744,24 @@ model EmergencyFund {
 // ───────────────────────── Cobrança (AbacatePay) ─────────────────────────
 
 model Subscription {
-  id                   String             @id @default(uuid()) @db.Uuid
-  userId               String             @unique @map("user_id") @db.Uuid
-  status               SubscriptionStatus @default(TRIALING)
-  trialEndsAt          DateTime           @map("trial_ends_at") @db.Timestamptz(3)
-  // Até quando o acesso pago em vigor cobre — Pix e boleto são avulsos, sem renovação
-  // automática; vencido esse prazo, o job de expiração bloqueia até um novo pagamento.
-  currentPeriodEnd     DateTime?          @map("current_period_end") @db.Timestamptz(3)
-  abacatepayCustomerId String?            @unique @map("abacatepay_customer_id")
+  id                       String             @id @default(uuid()) @db.Uuid
+  userId                   String             @unique @map("user_id") @db.Uuid
+  status                   SubscriptionStatus @default(TRIALING)
+  trialEndsAt              DateTime           @map("trial_ends_at") @db.Timestamptz(3)
+  // Até quando o acesso pago em vigor cobre. Pix, boleto e cartão avulso não renovam
+  // sozinhos — vencido esse prazo, o job de expiração bloqueia até um novo pagamento. Na
+  // recorrência no cartão, cada `subscription.renewed` empurra esse prazo pra frente.
+  currentPeriodEnd         DateTime?          @map("current_period_end") @db.Timestamptz(3)
+  abacatepayCustomerId     String?            @unique @map("abacatepay_customer_id")
+  // Assinatura recorrente no cartão (subs_...), preenchida pelo webhook subscription.completed.
+  abacatepaySubscriptionId String?            @unique @map("abacatepay_subscription_id")
+  // true quando o usuário cancelou a recorrência, mas mantém acesso até currentPeriodEnd.
+  cancelAtPeriodEnd        Boolean            @default(false) @map("cancel_at_period_end")
   // Quando o aviso de "acesso prestes a vencer" foi enviado nesse ciclo — evita reenviar a
   // cada execução horária do job; zerado quando um novo pagamento renova o período.
-  expiryNoticeSentAt   DateTime?          @map("expiry_notice_sent_at") @db.Timestamptz(3)
-  createdAt            DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
-  updatedAt            DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
+  expiryNoticeSentAt       DateTime?          @map("expiry_notice_sent_at") @db.Timestamptz(3)
+  createdAt                DateTime           @default(now()) @map("created_at") @db.Timestamptz(3)
+  updatedAt                DateTime           @updatedAt @map("updated_at") @db.Timestamptz(3)
 
   user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   payments Payment[]

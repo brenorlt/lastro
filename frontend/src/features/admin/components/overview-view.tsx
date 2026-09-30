@@ -8,7 +8,7 @@ import { ErrorState } from "@/components/ui/states";
 import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { userMessage } from "@/services/api-error";
-import type { AdminPayment, BillingPaymentStatus } from "@/types/admin";
+import { PAYMENT_METHOD_LABEL, type AdminPayment, type BillingPaymentStatus } from "@/types/admin";
 import { useAdminOverview } from "../api";
 
 const PAYMENT_STATUS_TONE: Record<BillingPaymentStatus, "positive" | "warning" | "negative"> = {
@@ -51,7 +51,7 @@ function RecentPaymentRow({ payment }: { payment: AdminPayment }) {
         <p className="truncate font-medium text-ink">{payment.userName}</p>
         <p className="truncate text-xs text-ink-3">{payment.userEmail}</p>
       </TD>
-      <TD className="text-ink-2">{payment.method === "PIX" ? "Pix" : "Boleto"}</TD>
+      <TD className="text-ink-2">{PAYMENT_METHOD_LABEL[payment.method]}</TD>
       <TD>
         <Badge tone={PAYMENT_STATUS_TONE[payment.status]}>{PAYMENT_STATUS_LABEL[payment.status]}</Badge>
       </TD>

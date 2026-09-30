@@ -4,6 +4,8 @@ export interface BillingStatus {
   status: BillingStatusValue;
   trialEndsAt: string | null;
   currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  hasRecurringSubscription: boolean;
   planPrice: string;
 }
 
@@ -21,4 +23,8 @@ export interface BoletoCheckout {
   brCode: string;
   brCodeBase64: string;
   expiresAt: string;
+}
+
+export interface HostedCheckout {
+  url: string;
 }

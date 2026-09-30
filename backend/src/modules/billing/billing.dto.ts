@@ -25,6 +25,12 @@ export class BillingStatusDto {
   @ApiProperty({ type: String, nullable: true, format: 'date-time' })
   currentPeriodEnd: string | null;
 
+  @ApiProperty({ description: 'Recorrência cancelada, com acesso mantido até currentPeriodEnd' })
+  cancelAtPeriodEnd: boolean;
+
+  @ApiProperty({ description: 'Tem assinatura recorrente no cartão ativa (renova sozinha)' })
+  hasRecurringSubscription: boolean;
+
   @ApiProperty({ example: '25.00' })
   planPrice: string;
 }
@@ -61,4 +67,11 @@ export class BoletoCheckoutDto {
 
   @ApiProperty({ format: 'date-time' })
   expiresAt: string;
+}
+
+export class HostedCheckoutDto {
+  @ApiProperty({
+    description: 'URL do checkout hospedado da AbacatePay para redirecionar o usuário',
+  })
+  url: string;
 }

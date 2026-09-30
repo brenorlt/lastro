@@ -12,8 +12,13 @@ function daysLeft(iso: string): number {
   return Math.max(0, Math.ceil((new Date(iso).getTime() - Date.now()) / 86_400_000));
 }
 
-export function BillingView() {
-  const status = useBillingStatus();
+export function BillingView({ returnedFromCheckout = false }: { returnedFromCheckout?: boolean }) {
+  // Na volta do checkout de cartão o webhook costuma chegar em segundos: confere o status
+  // com frequência até o acesso liberar.
+  const status = useBillingStatus({
+    refetchInterval: (query) =>
+      returnedFromCheckout && query.state.data?.status !== "ACTIVE" ? 4000 : false,
+  });
 
   if (status.isPending) {
     return (
@@ -53,16 +58,32 @@ export function BillingView() {
         <Card className="mb-6">
           <CardBody className="flex flex-wrap items-center justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-ink">Acesso ativo</p>
+              <p className="text-sm font-medium text-ink">
+                {s.hasRecurringSubscription ? "Assinatura ativa (renova sozinha)" : "Acesso ativo"}
+              </p>
               <p className="text-sm text-ink-2">
-                {s.currentPeriodEnd ? `Vence em ${formatDate(s.currentPeriodEnd)}` : null}
+                {s.currentPeriodEnd
+                  ? `${s.hasRecurringSubscription ? "Próxima cobrança" : "Vence"} em ${formatDate(s.currentPeriodEnd)}`
+                  : null}
+                {s.cancelAtPeriodEnd && " · recorrência cancelada, acesso mantido até o fim do ciclo"}
               </p>
             </div>
           </CardBody>
         </Card>
       )}
 
-      {!isActive ? <CheckoutOptions /> : null}
+      {!isActive && returnedFromCheckout && (
+        <Card className="mb-6">
+          <CardBody>
+            <p className="text-sm text-ink-2">
+              Recebemos seu retorno do checkout. Assim que o pagamento for confirmado, o acesso libera
+              sozinho aqui.
+            </p>
+          </CardBody>
+        </Card>
+      )}
+
+      {!isActive || s.cancelAtPeriodEnd ? <CheckoutOptions /> : null}
     </>
   );
 }

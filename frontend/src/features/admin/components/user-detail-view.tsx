@@ -13,7 +13,7 @@ import { Table, TBody, TD, TH, THead, TR } from "@/components/ui/table";
 import { toast } from "@/components/ui/toaster";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { userMessage } from "@/services/api-error";
-import type { BillingPaymentStatus, SubscriptionStatus } from "@/types/admin";
+import { PAYMENT_METHOD_LABEL, type BillingPaymentStatus, type SubscriptionStatus } from "@/types/admin";
 import { useAdminUser, useBlockUser, useGrantAccess, useUnblockUser } from "../api";
 
 const STATUS_TONE: Record<SubscriptionStatus, "positive" | "warning" | "negative"> = {
@@ -199,7 +199,7 @@ export function UserDetailView({ userId }: { userId: string }) {
             <TBody>
               {u.payments.map((p) => (
                 <TR key={p.id}>
-                  <TD>{p.method === "PIX" ? "Pix" : "Boleto"}</TD>
+                  <TD>{PAYMENT_METHOD_LABEL[p.method]}</TD>
                   <TD>
                     <Badge tone={PAYMENT_STATUS_TONE[p.status]}>{PAYMENT_STATUS_LABEL[p.status]}</Badge>
                   </TD>

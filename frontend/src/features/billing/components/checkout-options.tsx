@@ -1,13 +1,19 @@
 "use client";
 
-import { Barcode, Copy, ExternalLink, QrCode } from "lucide-react";
+import { Barcode, Check, Copy, CreditCard, ExternalLink, QrCode, Repeat } from "lucide-react";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardBody, CardHeader } from "@/components/ui/primitives";
+import { Badge, Card, CardBody, CardHeader } from "@/components/ui/primitives";
 import { toast } from "@/components/ui/toaster";
 import { userMessage } from "@/services/api-error";
-import { useBillingStatus, useCheckoutBoleto, useCheckoutPix } from "../api";
+import {
+  useBillingStatus,
+  useCheckoutBoleto,
+  useCheckoutCard,
+  useCheckoutPix,
+  useCheckoutSubscription,
+} from "../api";
 
 function formatTaxId(digits: string): string {
   if (digits.length <= 11) {
@@ -125,14 +131,85 @@ function BoletoPanel({ planPrice }: { planPrice: string }) {
   );
 }
 
+function redirect(url: string) {
+  window.location.href = url;
+}
+
 export function CheckoutOptions() {
   const status = useBillingStatus();
-  const [method, setMethod] = useState<"pix" | "boleto" | null>(null);
+  const [method, setMethod] = useState<"pix" | "boleto" | "card" | "subscription" | null>(null);
+  const card = useCheckoutCard();
+  const subscription = useCheckoutSubscription();
 
   const planPrice = status.data ? `R$ ${status.data.planPrice.replace(".", ",")}` : "R$ 25,00";
 
   return (
     <div className="grid gap-4 sm:grid-cols-2">
+      <Card className="relative ring-2 ring-accent">
+        <Badge tone="accent" className="absolute -top-3 left-5">
+          Recomendado
+        </Badge>
+        <CardHeader
+          title={
+            <span className="flex items-center gap-2">
+              <Repeat className="size-4 text-ink-3" aria-hidden /> Cartão com recorrência
+            </span>
+          }
+          description={`${planPrice}/mês · renova sozinho`}
+        />
+        <CardBody className="space-y-3">
+          <ul className="space-y-1.5 text-xs text-ink-2">
+            <li className="flex items-center gap-2">
+              <Check className="size-3.5 shrink-0 text-positive" aria-hidden /> Nunca fica bloqueado por esquecimento
+            </li>
+            <li className="flex items-center gap-2">
+              <Check className="size-3.5 shrink-0 text-positive" aria-hidden /> Cancele quando quiser, sem multa
+            </li>
+          </ul>
+          <Button
+            className="w-full"
+            // Segue "carregando" depois do sucesso: o redirect para a AbacatePay ainda vai acontecer.
+            loading={subscription.isPending || (method === "subscription" && subscription.isSuccess)}
+            onClick={() => {
+              setMethod("subscription");
+              subscription.mutate(undefined, {
+                onSuccess: (data) => redirect(data.url),
+                onError: (err) => toast.error(userMessage(err)),
+              });
+            }}
+          >
+            Assinar com cartão
+          </Button>
+        </CardBody>
+      </Card>
+
+      <Card>
+        <CardHeader
+          title={
+            <span className="flex items-center gap-2">
+              <CreditCard className="size-4 text-ink-3" aria-hidden /> Cartão
+            </span>
+          }
+          description={`${planPrice} · libera 30 dias`}
+        />
+        <CardBody>
+          <Button
+            variant="secondary"
+            className="w-full"
+            loading={card.isPending || (method === "card" && card.isSuccess)}
+            onClick={() => {
+              setMethod("card");
+              card.mutate(undefined, {
+                onSuccess: (data) => redirect(data.url),
+                onError: (err) => toast.error(userMessage(err)),
+              });
+            }}
+          >
+            Pagar com cartão
+          </Button>
+        </CardBody>
+      </Card>
+
       <Card className={method === "pix" ? "ring-2 ring-accent" : undefined}>
         <CardHeader
           title={

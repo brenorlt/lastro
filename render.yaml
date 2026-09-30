@@ -56,7 +56,7 @@ services:
         sync: false
       - key: ABACATEPAY_WEBHOOK_SECRET
         sync: false
-      # ID do produto AbacatePay (ainda não consumido pelo código — reservado para quando
-      # o checkout por produto/plano fixo for implementado; hoje o fluxo é transparent charge).
+      # ID do produto AbacatePay (não consumido pelo código — os produtos dos checkouts de
+      # cartão avulso e recorrente são criados automaticamente na AbacatePay).
       - key: ABACATEPAY_PRODUCT_ID
         sync: false
