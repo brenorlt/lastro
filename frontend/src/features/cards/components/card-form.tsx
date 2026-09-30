@@ -3,6 +3,7 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
+import { InstitutionInput } from "@/components/finance/institution-input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DrawerContent } from "@/components/ui/dialog";
 import { Field, Label } from "@/components/ui/field";
@@ -76,7 +77,9 @@ export function CardFormDrawer({ open, onOpenChange, card }: { open: boolean; on
           {formError && <FormAlert>{formError.message}</FormAlert>}
           <div className="grid gap-5 sm:grid-cols-2">
             <Field label="Nome" error={errors.name?.message} className="sm:col-span-2"><Input autoFocus placeholder="Ex.: Nubank Ultravioleta" {...register("name")} /></Field>
-            <Field label="Banco" optional><Input placeholder="Ex.: Nubank" {...register("institution")} /></Field>
+            <Controller control={control} name="institution" render={({ field }) => (
+              <Field label="Banco" optional><InstitutionInput placeholder="Ex.: Nubank" value={field.value} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} /></Field>
+            )} />
             <Controller control={control} name="brand" render={({ field }) => (
               <Field label="Bandeira">
                 <Select value={field.value} onValueChange={(b) => field.onChange(b as CardBrand)}>

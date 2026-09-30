@@ -1,3 +1,5 @@
+import { BankLogo } from "@/components/finance/bank-logo";
+import { findBank } from "@/lib/banks";
 import { cn } from "@/lib/cn";
 import { brandLabel } from "../api";
 
@@ -15,6 +17,7 @@ export function CardVisual({ name, brand, color, lastFour, institution, classNam
   className?: string;
   size?: "sm" | "md";
 }) {
+  const bank = findBank(institution);
   return (
     <div
       aria-hidden
@@ -27,7 +30,10 @@ export function CardVisual({ name, brand, color, lastFour, institution, classNam
       <div className="absolute -right-10 -top-16 size-48 rounded-full bg-white/10" />
       <div className={cn("relative flex h-full flex-col justify-between", size === "sm" ? "p-3" : "p-5")}>
         <div className="flex items-start justify-between gap-2">
-          <span className={cn("truncate font-medium opacity-90", size === "sm" ? "text-2xs" : "text-xs")}>{institution ?? name}</span>
+          <span className="flex min-w-0 items-center gap-2">
+            {bank && <BankLogo bank={bank} className={cn("shadow-sm ring-white/20", size === "sm" ? "size-5 rounded-[5px]" : "size-7 rounded-[7px]")} />}
+            <span className={cn("truncate font-medium opacity-90", size === "sm" ? "text-2xs" : "text-xs")}>{institution ?? name}</span>
+          </span>
           <span className={cn("shrink-0 font-semibold italic tracking-tight", size === "sm" ? "text-2xs" : "text-sm")}>{brandLabel(brand)}</span>
         </div>
         <div className={cn("h-6 w-8 rounded-[5px] bg-linear-to-br from-amber-100/90 to-amber-300/70", size === "sm" && "h-4 w-6")} />

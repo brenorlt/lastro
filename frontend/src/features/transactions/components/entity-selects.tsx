@@ -1,11 +1,11 @@
 "use client";
 
+import { AccountIcon, CardIcon } from "@/components/finance/bank-logo";
 import { EntityIcon } from "@/components/ui/entity-icon";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useAccounts } from "@/features/accounts/api";
 import { useCategories } from "@/features/categories/api";
 import { useCards } from "@/features/cards/api";
-import { CreditCard } from "lucide-react";
 import type { CategoryType } from "@/types/finance";
 
 const NONE = "__none__";
@@ -28,7 +28,7 @@ export function AccountSelect({ value, onChange, exclude, placeholder = "Escolha
       <SelectContent>
         {allLabel && <SelectItem value={NONE}>{allLabel}</SelectItem>}
         {accounts.map((a) => (
-          <SelectItem key={a.id} value={a.id} leading={<EntityIcon icon={a.icon} color={a.color} className={iconCls} />}>
+          <SelectItem key={a.id} value={a.id} leading={<AccountIcon account={a} className={iconCls} />}>
             {a.name}
           </SelectItem>
         ))}
@@ -85,7 +85,7 @@ export function PaymentSourceSelect({ accountId, creditCardId, onChange, ...aria
       <SelectContent>
         <SelectGroup>
           {accounts.map((a) => (
-            <SelectItem key={a.id} value={`acc:${a.id}`} leading={<EntityIcon icon={a.icon} color={a.color} className={iconCls} />}>{a.name}</SelectItem>
+            <SelectItem key={a.id} value={`acc:${a.id}`} leading={<AccountIcon account={a} className={iconCls} />}>{a.name}</SelectItem>
           ))}
         </SelectGroup>
         {cards.length > 0 && (
@@ -94,7 +94,7 @@ export function PaymentSourceSelect({ accountId, creditCardId, onChange, ...aria
               <SelectItem
                 key={c.id}
                 value={`card:${c.id}`}
-                leading={<span aria-hidden className="flex size-6 items-center justify-center rounded-[6px] text-white" style={{ background: c.color }}><CreditCard className="size-3.5" /></span>}
+                leading={<CardIcon card={c} />}
               >
                 {c.name}{c.lastFourDigits ? ` •••• ${c.lastFourDigits}` : ""}
               </SelectItem>

@@ -2,6 +2,7 @@
 
 import { Check } from "lucide-react";
 import type { ReactNode } from "react";
+import { InstitutionInput } from "@/components/finance/institution-input";
 import { EntityIcon } from "@/components/ui/entity-icon";
 import { Field } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
@@ -102,7 +103,7 @@ export function CashStep({ answers, set }: StepProps) {
         <MoneyInput autoFocus allowNegative value={answers.cashBalance} onChange={(v) => set({ cashBalance: v })} className="h-12 text-lg" />
       </Field>
       <Field label="Banco principal" optional hint="Criaremos sua primeira conta com esse saldo. Você pode detalhar depois.">
-        <Input placeholder="Ex.: Itaú, Nubank" value={answers.institution} onChange={(e) => set({ institution: e.target.value })} />
+        <InstitutionInput placeholder="Ex.: Itaú, Nubank" value={answers.institution} onChange={(v) => set({ institution: v })} />
       </Field>
     </StepFrame>
   );

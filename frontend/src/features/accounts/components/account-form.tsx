@@ -3,9 +3,10 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { Amount } from "@/components/finance/amount";
+import { AccountIcon } from "@/components/finance/bank-logo";
+import { InstitutionInput } from "@/components/finance/institution-input";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogClose, DrawerContent } from "@/components/ui/dialog";
-import { EntityIcon } from "@/components/ui/entity-icon";
 import { Field, Label } from "@/components/ui/field";
 import { FormAlert } from "@/components/ui/form-alert";
 import { Input } from "@/components/ui/input";
@@ -100,7 +101,7 @@ export function AccountFormDrawer({ open, onOpenChange, account }: AccountFormDr
       >
         <form id="account-form" onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-6">
           <div className="flex items-center gap-3 rounded-lg bg-surface-sunken p-4" aria-hidden>
-            <EntityIcon icon={preview.icon ?? "wallet"} color={preview.color ?? "#3F51D8"} />
+            <AccountIcon account={{ institution: preview.institution, icon: preview.icon ?? "wallet", color: preview.color ?? "#3F51D8" }} />
             <div className="min-w-0 flex-1">
               <p className="truncate text-sm font-medium text-ink">{preview.name || "Nome da conta"}</p>
               <p className="truncate text-xs text-ink-3">{[preview.institution, accountTypeLabel(preview.type ?? "CHECKING")].filter(Boolean).join(" · ")}</p>
@@ -113,9 +114,15 @@ export function AccountFormDrawer({ open, onOpenChange, account }: AccountFormDr
           <Field label="Nome" error={errors.name?.message}>
             <Input placeholder="Ex.: Conta principal" autoFocus {...register("name")} />
           </Field>
-          <Field label="Banco ou instituição" optional error={errors.institution?.message}>
-            <Input placeholder="Ex.: Itaú, Nubank, XP" {...register("institution")} />
-          </Field>
+          <Controller
+            control={control}
+            name="institution"
+            render={({ field }) => (
+              <Field label="Banco ou instituição" optional error={errors.institution?.message}>
+                <InstitutionInput placeholder="Ex.: Itaú, Nubank, XP" value={field.value} onChange={field.onChange} onBlur={field.onBlur} name={field.name} ref={field.ref} />
+              </Field>
+            )}
+          />
 
           <div className="space-y-2">
             <Label>Tipo</Label>

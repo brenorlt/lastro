@@ -2,11 +2,12 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
-import { ArrowLeftRight, CreditCard, Plus, Search, TrendingUp } from "lucide-react";
+import { ArrowLeftRight, Plus, Search, TrendingUp } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
 import { Amount } from "@/components/finance/amount";
+import { AccountIcon, CardIcon } from "@/components/finance/bank-logo";
 import { EntityIcon } from "@/components/ui/entity-icon";
 import { Spinner } from "@/components/ui/spinner";
 import { ALL_ROUTES } from "@/config/navigation";
@@ -110,7 +111,7 @@ export function CommandMenu() {
                 <Group heading="Contas">
                   {data.accounts.map((a) => (
                     <Command.Item key={a.id} value={`acc-${a.id}`} keywords={kw} className={itemClass} onSelect={() => run(() => router.push("/contas"))}>
-                      <EntityIcon icon={a.icon} color={a.color} className={iconCls} />
+                      <AccountIcon account={a} className={iconCls} />
                       <span className="min-w-0 flex-1 truncate">{a.name}</span>
                       <Amount value={a.currentBalance} className="text-xs font-medium" />
                     </Command.Item>
@@ -121,7 +122,7 @@ export function CommandMenu() {
                 <Group heading="Cartões">
                   {data.cards.map((c) => (
                     <Command.Item key={c.id} value={`card-${c.id}`} keywords={kw} className={itemClass} onSelect={() => run(() => router.push(`/cartoes/${c.id}`))}>
-                      <span aria-hidden className="flex size-7 items-center justify-center rounded-[7px] text-white" style={{ background: c.color }}><CreditCard className="!size-3.5 !text-white" /></span>
+                      <CardIcon card={c} className="size-7 rounded-[7px] [&_svg]:!size-3.5 [&_svg]:!text-white" />
                       <span className="min-w-0 flex-1 truncate">{c.name}{c.lastFourDigits ? ` •••• ${c.lastFourDigits}` : ""}</span>
                       <span className="text-xs text-ink-3">disponível</span>
                       <Amount value={c.availableLimit} className="text-xs font-medium" />

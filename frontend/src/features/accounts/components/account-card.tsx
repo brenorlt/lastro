@@ -2,6 +2,7 @@
 
 import { Archive, ArchiveRestore, MoreHorizontal, Pencil, Trash2 } from "lucide-react";
 import { Amount } from "@/components/finance/amount";
+import { AccountIcon } from "@/components/finance/bank-logo";
 import { IconButton } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -10,7 +11,6 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { EntityIcon } from "@/components/ui/entity-icon";
 import { Badge, Card } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { toNumber } from "@/lib/format";
@@ -33,7 +33,7 @@ export function AccountCard({ account, onEdit, onToggleArchive, onDelete }: Acco
   return (
     <Card className={cn("group relative flex flex-col gap-6 p-5 transition-shadow hover:shadow-md", archived && "opacity-75")}>
       <div className="flex items-start gap-3">
-        <EntityIcon icon={account.icon} color={account.color} />
+        <AccountIcon account={account} />
         <div className="min-w-0 flex-1">
           <h3 className="truncate text-sm font-medium text-ink">
             <button type="button" onClick={onEdit} className="text-left after:absolute after:inset-0 after:rounded-xl focus-visible:outline-none focus-visible:after:ring-2 focus-visible:after:ring-accent">
