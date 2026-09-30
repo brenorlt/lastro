@@ -103,7 +103,7 @@ describe('Login com Google (e2e)', () => {
     const profile = profileFor('novo');
     const res = await signIn(profile);
     expect(res.status).toBe(302);
-    expect(redirectPath(res)).toBe('/onboarding');
+    expect(redirectPath(res)).toBe('/onboarding?cadastro=google');
     expect(getCookie(res, 'lastro_rt')?.value).toBeTruthy();
     expect(getCookie(res, 'lastro_session')?.value).toBe('1');
 

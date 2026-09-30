@@ -21,7 +21,7 @@ API é **same-origin** e os cookies são first-party. CORS continua ativo para o
 | DELETE | `/sessions/:id` | bearer | 204 · 404 `NOT_FOUND` (inexistente, já revogada ou de outro usuário) |
 | POST | `/sessions/revoke-others` | bearer | 200 `{ revoked: n }` |
 | GET | `/google` | pública, 20/min | 302 para o Google (ver "Login com Google") |
-| GET | `/google/callback` | cookie `lastro_oauth`, 20/min | 302 para `/onboarding`, `?next=` ou `/painel` + cookies · 302 `/entrar?erro=…` |
+| GET | `/google/callback` | cookie `lastro_oauth`, 20/min | 302 para `/onboarding` (`?cadastro=google` se a conta é nova, para o GA), `?next=` ou `/painel` + cookies · 302 `/entrar?erro=…` |
 
 ## Login com Google
 

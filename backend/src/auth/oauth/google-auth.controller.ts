@@ -87,9 +87,12 @@ export class GoogleAuthController {
       const result = await this.auth.loginWithGoogle(profile, clientContext(req));
       setSessionCookies(res, this.config, result.refreshToken, result.refreshExpiresAt);
 
-      const destination = result.payload.user.onboardingCompleted
-        ? (flow.next ?? '/painel')
-        : '/onboarding';
+      // ?cadastro=google: só aqui se sabe que a conta é nova — o frontend conta o sign_up no GA.
+      const destination = result.isNewUser
+        ? '/onboarding?cadastro=google'
+        : result.payload.user.onboardingCompleted
+          ? (flow.next ?? '/painel')
+          : '/onboarding';
       res.redirect(302, this.appUrl(destination));
     } catch (err) {
       if (err instanceof AppException && err.code === ErrorCode.EMAIL_NOT_VERIFIED) {
