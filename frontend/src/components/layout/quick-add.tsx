@@ -1,6 +1,7 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { useComposer } from "@/stores/composer-store";
 
@@ -27,6 +28,9 @@ export function useQuickAddShortcut() {
 /** Botão flutuante no mobile, acima da tab bar e ao alcance do polegar. */
 export function QuickAddFab() {
   const openNew = useComposer((s) => s.openNew);
+  const pathname = usePathname();
+  // Na importação, a barra fixa de "Importar" ocupa esse espaço.
+  if (pathname.startsWith("/lancamentos/importar")) return null;
   return (
     <button
       type="button"

@@ -86,7 +86,7 @@ export const NAV_GROUPS: NavGroup[] = [
         purpose: "Receitas, despesas e transferências — únicas, recorrentes ou parceladas.",
         phase: 4,
         tab: "transactions",
-        keywords: ["transações", "receitas", "despesas", "transferência"],
+        keywords: ["transações", "receitas", "despesas", "transferência", "importar", "extrato", "ofx", "csv"],
       },
       {
         key: "accounts",

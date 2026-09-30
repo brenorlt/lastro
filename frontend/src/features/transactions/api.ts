@@ -56,7 +56,7 @@ export function useTags() {
 }
 
 /** Lançamentos mudam saldos de contas e contagens de categorias. */
-function invalidateMoney(qc: QueryClient) {
+export function invalidateMoney(qc: QueryClient) {
   return Promise.all([
     qc.invalidateQueries({ queryKey: transactionKeys.all }),
     qc.invalidateQueries({ queryKey: accountKeys.all }),

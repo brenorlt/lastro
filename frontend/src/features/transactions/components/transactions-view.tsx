@@ -1,11 +1,12 @@
 "use client";
 
-import { ArrowLeftRight, Plus, ReceiptText, SearchX } from "lucide-react";
+import { ArrowLeftRight, FileUp, Plus, ReceiptText, SearchX } from "lucide-react";
+import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { Amount } from "@/components/finance/amount";
 import { PageHeader } from "@/components/layout/page-header";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/dialog";
 import { Card, Skeleton } from "@/components/ui/primitives";
 import { EmptyState, ErrorState } from "@/components/ui/states";
@@ -124,6 +125,7 @@ export function TransactionsView() {
         breadcrumbs={[{ label: "Lastro", href: "/painel" }, { label: "Lançamentos" }]}
         actions={
           <>
+            <Link href="/lancamentos/importar" className={buttonVariants({ variant: "secondary" })}><FileUp aria-hidden /> Importar extrato</Link>
             <Button variant="secondary" onClick={() => openNew("TRANSFER")}><ArrowLeftRight aria-hidden /> Transferir</Button>
             <Button onClick={() => openNew("EXPENSE")}><Plus aria-hidden /> Novo lançamento</Button>
           </>
