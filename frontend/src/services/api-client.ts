@@ -1,3 +1,4 @@
+import { trackApiAction } from "@/lib/analytics";
 import { useAuthStore } from "@/stores/auth-store";
 import type { ApiSuccess } from "@/types/api";
 import type { AuthPayload } from "@/types/auth";
@@ -110,6 +111,13 @@ async function validToken(): Promise<string | null> {
 const RETRYABLE_AUTH_CODES = new Set(["TOKEN_EXPIRED"]);
 
 async function request<T, M = undefined>(method: Method, path: string, options: RequestOptions = {}) {
+  const result = await requestOnce<T, M>(method, path, options);
+  // Só escritas bem-sucedidas viram evento (parse lança em erro); nomes e rota, nunca o corpo.
+  if (method !== "GET") trackApiAction(method, path);
+  return result;
+}
+
+async function requestOnce<T, M>(method: Method, path: string, options: RequestOptions) {
   const useAuth = options.auth !== false;
   const token = useAuth ? await validToken() : null;
   const response = await send(method, path, options, token);

@@ -1,4 +1,5 @@
 import { Button } from "@/components/ui/button";
+import { track } from "@/lib/analytics";
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL ?? "/api").replace(/\/+$/, "");
 
@@ -23,7 +24,7 @@ export function GoogleSignIn({ next, label = "Continuar com Google" }: { next?: 
   return (
     <div className="space-y-5">
       <Button asChild variant="secondary" size="lg" className="w-full">
-        <a href={href}>
+        <a href={href} onClick={() => track("login_start", { method: "google" })}>
           <GoogleMark />
           {label}
         </a>
