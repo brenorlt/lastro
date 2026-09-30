@@ -54,6 +54,8 @@
 
   --focus: #2f3fcf;
   --scrim: rgb(17 19 22 / 0.32);
+  /* Tour guiado: mais escuro que o scrim de modais, para o bloco em destaque saltar. */
+  --tour-scrim: rgb(12 14 18 / 0.68);
 
   --shadow-color: 220 15% 20%;
 }
@@ -98,6 +100,7 @@
 
   --focus: #8e9bff;
   --scrim: rgb(0 0 0 / 0.6);
+  --tour-scrim: rgb(0 0 0 / 0.74);
 
   --shadow-color: 0 0% 0%;
 }
@@ -147,6 +150,7 @@
   --color-grid: var(--grid);
   --color-focus: var(--focus);
   --color-scrim: var(--scrim);
+  --color-tour-scrim: var(--tour-scrim);
 
   --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   --font-mono: var(--font-geist-mono), ui-monospace, monospace;
@@ -278,6 +282,15 @@
 @keyframes ticker-progress {
   from { transform: scaleX(0); }
   to { transform: scaleX(1); }
+}
+
+/* Tour guiado: anel que "respira" em volta do bloco em destaque. */
+@keyframes tour-pulse {
+  0% { box-shadow: 0 0 0 0 color-mix(in oklab, var(--accent) 50%, transparent); }
+  70%, 100% { box-shadow: 0 0 0 12px color-mix(in oklab, var(--accent) 0%, transparent); }
+}
+.tour-pulse {
+  animation: tour-pulse 1.8s var(--ease-out) infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {

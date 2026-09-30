@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from "react";
 import { useApplyUserTheme } from "@/features/profile/use-theme-preference";
+import { ProductTour } from "@/features/tour/components/product-tour";
 import { TransactionComposer } from "@/features/transactions/components/transaction-composer";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
@@ -44,6 +45,7 @@ export function AppShell({ children }: { children: ReactNode }) {
       <QuickAddFab />
       <CommandMenu />
       <TransactionComposer />
+      <ProductTour />
     </div>
   );
 }

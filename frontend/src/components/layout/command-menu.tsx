@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query";
 import { Command } from "cmdk";
-import { ArrowLeftRight, Plus, Search, TrendingUp } from "lucide-react";
+import { ArrowLeftRight, Compass, Plus, Search, TrendingUp } from "lucide-react";
 import { Dialog as DialogPrimitive } from "radix-ui";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, type ReactNode } from "react";
@@ -11,6 +11,7 @@ import { AccountIcon, CardIcon } from "@/components/finance/bank-logo";
 import { EntityIcon } from "@/components/ui/entity-icon";
 import { Spinner } from "@/components/ui/spinner";
 import { ALL_ROUTES } from "@/config/navigation";
+import { useTour } from "@/features/tour/store";
 import { transactionsApi } from "@/features/transactions/api";
 import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { formatDate } from "@/lib/format";
@@ -37,6 +38,7 @@ export function CommandMenu() {
   const open = useUiStore((s) => s.commandOpen);
   const setOpen = useUiStore((s) => s.setCommandOpen);
   const openNew = useComposer((s) => s.openNew);
+  const startTour = useTour((s) => s.start);
   const openEdit = useOpenTransaction();
   const [text, setText] = useState("");
   const q = useDebouncedValue(text.trim(), 250);
@@ -162,6 +164,9 @@ export function CommandMenu() {
                 </Command.Item>
                 <Command.Item className={itemClass} onSelect={() => run(() => openNew("TRANSFER"))} keywords={["mover", "entre contas"]}>
                   <ArrowLeftRight aria-hidden /> Nova transferência
+                </Command.Item>
+                <Command.Item className={itemClass} onSelect={() => run(() => { router.push("/painel"); startTour(); })} keywords={["tour", "tutorial", "ajuda", "guia", "primeiros passos"]}>
+                  <Compass aria-hidden /> Fazer o tour guiado
                 </Command.Item>
               </Group>
               <Group heading="Ir para">

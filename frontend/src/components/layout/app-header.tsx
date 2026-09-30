@@ -49,6 +49,7 @@ export function AppHeader({
         <button
           type="button"
           onClick={() => openCommand(true)}
+          data-tour="search"
           className={cn(
             "ml-auto flex h-9 items-center gap-2.5 rounded-md text-sm text-ink-3 transition-colors md:ml-0",
             "size-9 justify-center hover:bg-surface-sunken md:w-72 md:justify-start md:bg-surface md:px-3 md:ring-1 md:ring-line md:hover:ring-line-strong",
@@ -64,10 +65,10 @@ export function AppHeader({
         </button>
 
         <div className="flex items-center gap-1 md:ml-auto">
-          <Button size="sm" onClick={() => openNew("EXPENSE")} className="mr-2 hidden md:inline-flex" title="Atalho: N">
+          <Button size="sm" onClick={() => openNew("EXPENSE")} className="mr-2 hidden md:inline-flex" title="Atalho: N" data-tour="new">
             <Plus aria-hidden /> Novo
           </Button>
-          <IconButton label={privacyMode ? "Mostrar valores" : "Ocultar valores"} onClick={togglePrivacy} aria-pressed={privacyMode}>
+          <IconButton label={privacyMode ? "Mostrar valores" : "Ocultar valores"} onClick={togglePrivacy} aria-pressed={privacyMode} data-tour="privacy">
             {privacyMode ? <EyeOff /> : <Eye />}
           </IconButton>
           <IconButton label={unread ? `Notificações: ${unread} não lidas` : "Notificações"} asChild>

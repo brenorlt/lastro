@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/primitives";
 import { Progress } from "@/components/ui/progress";
 import { toast } from "@/components/ui/toaster";
 import { formatCurrency, formatPercent, toNumber } from "@/lib/format";
+import { useTour } from "@/features/tour/store";
 import { ApiError, userMessage } from "@/services/api-error";
 import { onboardingApi, type OnboardingSummary } from "../api";
 import { INITIAL_ANSWERS, canContinue, toInput, type Answers } from "../model";
@@ -51,8 +52,9 @@ function SummaryView({ summary }: { summary: OnboardingSummary }) {
         </ul>
       </Card>
       <EstimateDisclaimer />
-      <Link href="/painel" className={buttonVariants({ size: "lg" })}>
-        Ir para o painel <ArrowRight aria-hidden />
+      {/* O tour guiado abre no painel e apresenta cada bloco já com esses números. */}
+      <Link href="/painel" onClick={() => useTour.getState().start()} className={buttonVariants({ size: "lg" })}>
+        Conhecer meu painel <ArrowRight aria-hidden />
       </Link>
     </div>
   );
@@ -98,6 +100,8 @@ export function OnboardingWizard() {
     } catch {
       // Sem bloqueio: pular nunca deve prender a pessoa aqui.
     } finally {
+      // Mesmo sem os números, o tour apresenta onde fica cada coisa.
+      useTour.getState().start();
       router.replace("/painel");
     }
   };

@@ -36,6 +36,7 @@ export function QuickAddFab() {
       type="button"
       onClick={() => openNew("EXPENSE")}
       aria-label="Novo lançamento"
+      data-tour="new"
       className="fixed bottom-[calc(72px+env(safe-area-inset-bottom))] right-4 z-40 flex size-14 items-center justify-center rounded-full bg-ink text-ink-inverse shadow-lg transition-transform active:scale-95 md:hidden"
     >
       <Plus className="size-6" strokeWidth={2.2} aria-hidden />

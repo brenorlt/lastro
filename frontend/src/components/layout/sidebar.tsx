@@ -66,7 +66,7 @@ export function Sidebar() {
   return (
     <>
       {/* Tablet: rail fixo */}
-      <aside className="sticky top-0 hidden h-dvh w-[68px] shrink-0 flex-col border-r border-line bg-canvas md:flex lg:hidden">
+      <aside data-tour="nav" className="sticky top-0 hidden h-dvh w-[68px] shrink-0 flex-col border-r border-line bg-canvas md:flex lg:hidden">
         <div className="flex h-16 items-center justify-center">
           <Link href="/painel" aria-label="Lastro — início">
             <LogoMark />
@@ -77,6 +77,7 @@ export function Sidebar() {
 
       {/* Desktop: completa, recolhível */}
       <aside
+        data-tour="nav"
         className={cn(
           "sticky top-0 hidden h-dvh shrink-0 flex-col border-r border-line bg-canvas transition-[width] duration-200 ease-out lg:flex",
           storedCollapsed ? "w-[68px]" : "w-64",

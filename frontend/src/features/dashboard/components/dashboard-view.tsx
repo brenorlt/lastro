@@ -59,7 +59,9 @@ export function DashboardView() {
           <p className="text-sm text-ink-3">{user ? greeting(user.name) : ""}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Painel</h1>
         </div>
-        <MonthNavigator value={month} onChange={setMonth} />
+        <div data-tour="month" className="self-start sm:self-auto">
+          <MonthNavigator value={month} onChange={setMonth} />
+        </div>
       </div>
 
       <InsightTicker personal={d?.insights ?? []} market={market.data?.insights ?? []} />
@@ -84,17 +86,21 @@ export function DashboardView() {
       ) : (
         <div className={cn("space-y-4 transition-opacity", query.isFetching && "opacity-70")}>
           <div className="grid gap-10 pb-6 lg:grid-cols-[1.25fr_1fr] lg:items-end">
-            <NetWorthHero
-              netWorth={d.netWorth.current}
-              hidden={hidden}
-              assets={d.netWorth.assets}
-              liabilities={d.netWorth.liabilities}
-              change={d.netWorth.change12m ?? undefined}
-            />
-            <InsightsCard insights={d.insights} />
+            <div data-tour="net-worth">
+              <NetWorthHero
+                netWorth={d.netWorth.current}
+                hidden={hidden}
+                assets={d.netWorth.assets}
+                liabilities={d.netWorth.liabilities}
+                change={d.netWorth.change12m ?? undefined}
+              />
+            </div>
+            <div data-tour="insights">
+              <InsightsCard insights={d.insights} />
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3">
+          <div data-tour="stats" className="grid grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3">
             <StatTile label="Saldo disponível" value={d.cash.available} icon={Wallet} explainer="Soma das contas correntes, digitais, poupança e carteiras incluídas no patrimônio. Não inclui investimentos." />
             <StatTile
               label="Receitas do mês"
