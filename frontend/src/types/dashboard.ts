@@ -3,7 +3,7 @@ import type { Transaction } from "./finance";
 export type InsightTone = "positive" | "neutral" | "warning";
 
 export interface DashboardInsight {
-  key: "SPENDING_CHANGE" | "SAVINGS_RATE" | "EMERGENCY_COVERAGE" | "TOP_CATEGORY" | "OVERDUE" | string;
+  key: "SPENDING_CHANGE" | "SAVINGS_RATE" | "EMERGENCY_COVERAGE" | "TOP_CATEGORY" | "OVERDUE" | "INCOME_CHANGE" | string;
   tone: InsightTone;
   message: string;
   basis: string;
@@ -48,4 +48,21 @@ export interface Dashboard {
   upcoming: Transaction[];
   recent: Transaction[];
   insights: DashboardInsight[];
+}
+
+/** Destaque de mercado (GET /market/insights). */
+export interface MarketInsight {
+  key: string;
+  kind: "currency" | "index" | "stock" | "holding";
+  tone: InsightTone;
+  trend: "up" | "down" | "flat";
+  symbol: string;
+  message: string;
+  basis: string;
+  value: number;
+}
+
+export interface MarketInsights {
+  updatedAt: string | null;
+  insights: MarketInsight[];
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftRight, Check, PiggyBank, Receipt, Shield, Sparkles, Target, TrendingDown, TriangleAlert } from "lucide-react";
+import { ArrowLeftRight, Check, PiggyBank, Receipt, Shield, Sparkles, Target, TrendingDown, TrendingUp, TriangleAlert } from "lucide-react";
 import Link from "next/link";
 import { BarChart, DonutChart, LineChart } from "@/components/charts/charts";
 import { ChartCard } from "@/components/charts/chart-card";
@@ -20,18 +20,25 @@ import { useComposer } from "@/stores/composer-store";
 import type { Dashboard, DashboardInsight } from "@/types/dashboard";
 import type { Transaction } from "@/types/finance";
 import { useToggleCleared } from "@/features/transactions/api";
-import { shortMonth } from "../api";
+import { shortMonth, tickerHeadline } from "../api";
 
 const INSIGHT_ICONS: Record<string, typeof Sparkles> = {
-  SPENDING_CHANGE: TrendingDown,
   SAVINGS_RATE: PiggyBank,
   EMERGENCY_COVERAGE: Shield,
   TOP_CATEGORY: Receipt,
   OVERDUE: TriangleAlert,
 };
 
+/** Variações (gasto/renda) apontam para onde o número foi. */
+export function insightIcon(insight: DashboardInsight) {
+  if (insight.key === "SPENDING_CHANGE" || insight.key === "INCOME_CHANGE") {
+    return (insight.value ?? 0) > 0 ? TrendingUp : TrendingDown;
+  }
+  return INSIGHT_ICONS[insight.key] ?? Sparkles;
+}
+
 /** Frases vindas da API; números destacados em negrito para leitura rápida. */
-function emphasize(message: string) {
+export function emphasize(message: string) {
   const parts = message.split(/(R\$\s?[\d.,]+|\d+(?:,\d+)?\s?%|\d+(?:,\d+)?\s(?:meses|mês|lançamentos?))/g);
   return parts.map((p, i) => (i % 2 === 1 ? <strong key={i}>{p}</strong> : p));
 }
@@ -45,9 +52,9 @@ export function InsightsCard({ insights }: { insights: DashboardInsight[] }) {
           Registre receitas e despesas deste mês para ver aqui sua taxa de poupança, a cobertura da reserva e para onde vai seu dinheiro.
         </p>
       ) : (
-        <ul className="divide-y divide-line px-5 sm:px-6">
+        <ul className="@container divide-y divide-line px-5 sm:px-6">
           {insights.map((i) => (
-            <Insight key={i.key} icon={INSIGHT_ICONS[i.key] ?? Sparkles} tone={i.tone} basis={i.basis}>
+            <Insight key={i.key} icon={insightIcon(i)} tone={i.tone} basis={i.basis} highlight={tickerHeadline({ source: "personal", insight: i })}>
               {emphasize(i.message)}
             </Insight>
           ))}

@@ -264,6 +264,22 @@
   }
 }
 
+/* Barra de tempo do letreiro de insights (duração definida no componente). */
+/* Entrada dos cards de insights: deslizam na direção da navegação, em cascata. */
+@keyframes ticker-slide-next {
+  from { opacity: 0; transform: translateX(32px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+@keyframes ticker-slide-prev {
+  from { opacity: 0; transform: translateX(-32px) scale(0.97); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes ticker-progress {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

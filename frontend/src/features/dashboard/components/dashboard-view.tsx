@@ -17,8 +17,9 @@ import { formatCurrency, toNumber } from "@/lib/format";
 import { userMessage } from "@/services/api-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
-import { pctChange, useDashboard } from "../api";
+import { pctChange, useDashboard, useMarketInsights } from "../api";
 import { CashflowChart, GoalsCard, InsightsCard, NetWorthChart, RecentCard, SpendingChart, UpcomingCard } from "./dashboard-sections";
+import { InsightTicker } from "./insight-ticker";
 
 const ym = ({ year, month }: MonthRef) => `${year}-${String(month + 1).padStart(2, "0")}`;
 
@@ -48,6 +49,7 @@ export function DashboardView() {
   const hidden = useUiStore((s) => s.privacyMode);
   const [month, setMonth] = useState<MonthRef>(currentMonth);
   const query = useDashboard(ym(month));
+  const market = useMarketInsights();
   const d = query.data;
 
   return (
@@ -59,6 +61,8 @@ export function DashboardView() {
         </div>
         <MonthNavigator value={month} onChange={setMonth} />
       </div>
+
+      <InsightTicker personal={d?.insights ?? []} market={market.data?.insights ?? []} />
 
       {user && !user.onboardingCompleted && (
         <Card className="mb-8 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
