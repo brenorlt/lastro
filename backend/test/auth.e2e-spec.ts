@@ -174,6 +174,7 @@ describe('Auth (e2e)', () => {
         locale: 'pt-BR',
         timezone: 'America/Sao_Paulo',
         theme: 'SYSTEM',
+        role: 'USER',
         onboardingCompleted: false,
         notificationPrefs: expect.objectContaining({ channels: { inApp: true, email: true } }),
         createdAt: expect.any(String),
