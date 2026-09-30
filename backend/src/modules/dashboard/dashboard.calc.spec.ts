@@ -232,6 +232,29 @@ describe('insights', () => {
     ).toBe('Você tem 1 lançamento vencido somando R$ 10,00.');
   });
 
+  it('alerta de renda: só com base anterior e variação ≥ 5%', () => {
+    const income = (current: string, previous?: string) =>
+      buildInsights({
+        ...base,
+        income: new Decimal(current),
+        previousIncome: previous ? new Decimal(previous) : undefined,
+      }).find((i) => i.key === 'INCOME_CHANGE');
+
+    expect(income('10000')).toBeUndefined();
+    expect(income('10200', '10000')).toBeUndefined();
+    expect(income('11500', '10000')).toMatchObject({
+      tone: 'positive',
+      message: 'Sua renda aumentou 15% em relação ao mês anterior.',
+      basis: 'R$ 11.500,00 neste mês vs. R$ 10.000,00 no anterior',
+      value: 15,
+    });
+    expect(income('9300', '10000')).toMatchObject({ tone: 'neutral', value: -7 });
+    expect(income('7000', '10000')).toMatchObject({
+      tone: 'warning',
+      message: 'Sua renda caiu 30% em relação ao mês anterior.',
+    });
+  });
+
   it('reserva sem dinheiro separado fala do saldo disponível, não de "0 meses"', () => {
     const r = buildInsights({
       ...base,

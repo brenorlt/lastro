@@ -166,7 +166,13 @@ export function averageMonthlyExpense(
 export type InsightTone = 'positive' | 'neutral' | 'warning';
 
 export interface Insight {
-  key: 'SPENDING_CHANGE' | 'SAVINGS_RATE' | 'EMERGENCY_COVERAGE' | 'TOP_CATEGORY' | 'OVERDUE';
+  key:
+    | 'SPENDING_CHANGE'
+    | 'SAVINGS_RATE'
+    | 'EMERGENCY_COVERAGE'
+    | 'TOP_CATEGORY'
+    | 'OVERDUE'
+    | 'INCOME_CHANGE';
   tone: InsightTone;
   message: string;
   basis: string;
@@ -178,6 +184,8 @@ export interface InsightInput {
   income: Decimal;
   expense: Decimal;
   previousExpense: Decimal;
+  /** Ausente = sem alerta de renda. */
+  previousIncome?: Decimal;
   /**
    * `cashCoverageMonths` presente = reserva ainda sem dinheiro separado: a mensagem passa
    * a falar do saldo disponível em vez de afirmar "cobre 0 meses".
@@ -274,5 +282,21 @@ export function buildInsights(input: InsightInput): Insight[] {
     });
   }
 
-  return insights.slice(0, 5);
+  if (input.previousIncome?.greaterThan(0) && input.income.greaterThan(0)) {
+    const change = pct1(
+      input.income.minus(input.previousIncome).div(input.previousIncome).times(100),
+    );
+    // Oscilações pequenas de renda não viram alerta.
+    if (Math.abs(change) >= 5) {
+      insights.push({
+        key: 'INCOME_CHANGE',
+        tone: change > 0 ? 'positive' : change <= -10 ? 'warning' : 'neutral',
+        message: `Sua renda ${change > 0 ? 'aumentou' : 'caiu'} ${formatNumber1(Math.abs(change))}% em relação ao mês anterior.`,
+        basis: `${money(input.income)} neste mês vs. ${money(input.previousIncome)} no anterior`,
+        value: change,
+      });
+    }
+  }
+
+  return insights.slice(0, 6);
 }

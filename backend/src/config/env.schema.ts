@@ -78,6 +78,19 @@ export const envSchema = z
     GOOGLE_CLIENT_ID: optionalString,
     GOOGLE_CLIENT_SECRET: optionalString,
 
+    // Insights de mercado do painel. Sem token, a brapi só serve PETR4, VALE3, ITUB4 e MGLU3
+    // (e não o Ibovespa); com token, entram também o índice e os ativos da carteira do usuário.
+    BRAPI_TOKEN: optionalString,
+    MARKET_TICKERS: z
+      .string()
+      .default('PETR4,VALE3,ITUB4,MGLU3')
+      .transform((value) =>
+        value
+          .split(',')
+          .map((item) => item.trim().toUpperCase())
+          .filter(Boolean),
+      ),
+
     // Diretório de arquivos enviados (avatares). Em Docker, monte um volume aqui.
     UPLOAD_DIR: z.string().min(1).default('./storage'),
 

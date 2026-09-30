@@ -379,6 +379,7 @@ export class DashboardService {
         income: flow.income,
         expense: flow.expense,
         previousExpense: previous.expense,
+        previousIncome: previous.income,
         emergency: emergencyForInsight,
         topCategory: topCategory ? { name: topCategory.name, share: topCategory.share } : null,
         overdue,

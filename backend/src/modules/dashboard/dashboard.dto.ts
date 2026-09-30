@@ -94,7 +94,14 @@ class DashboardGoalDto {
 
 class InsightDto {
   @ApiProperty({
-    enum: ['SPENDING_CHANGE', 'SAVINGS_RATE', 'EMERGENCY_COVERAGE', 'TOP_CATEGORY', 'OVERDUE'],
+    enum: [
+      'SPENDING_CHANGE',
+      'SAVINGS_RATE',
+      'EMERGENCY_COVERAGE',
+      'TOP_CATEGORY',
+      'OVERDUE',
+      'INCOME_CHANGE',
+    ],
   })
   key: string;
   @ApiProperty({ enum: ['positive', 'neutral', 'warning'] }) tone: string;

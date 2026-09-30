@@ -48,6 +48,10 @@ services:
         sync: false
       - key: GOOGLE_CLIENT_SECRET
         sync: false
+      # Opcional: token da brapi.dev para Ibovespa e ações da carteira nos insights do painel
+      # (sem ele, só PETR4, VALE3, ITUB4 e MGLU3).
+      - key: BRAPI_TOKEN
+        sync: false
       - key: ABACATEPAY_API_KEY
         sync: false
       - key: ABACATEPAY_WEBHOOK_SECRET

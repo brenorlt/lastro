@@ -30,6 +30,7 @@ import { GoalsModule } from './modules/goals/goals.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { MailModule } from './modules/mail/mail.module.js';
+import { MarketModule } from './modules/market/market.module.js';
 import { UsersModule } from './modules/users/users.module.js';
 import { SearchModule } from './modules/search/search.module.js';
 import { TagsModule } from './modules/tags/tags.module.js';
@@ -72,6 +73,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module.j
     PlanningModule,
     ReportsModule,
     DashboardModule,
+    MarketModule,
   ],
   providers: [
     // Ordem importa: rate limit antes da autenticação, cobrança depois (precisa de request.user).
