@@ -1,6 +1,6 @@
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { type Query, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api } from "@/services/api-client";
-import type { BillingStatus, BoletoCheckout, PixCheckout } from "@/types/billing";
+import type { BillingStatus, BoletoCheckout, HostedCheckout, PixCheckout } from "@/types/billing";
 
 export const billingKeys = { status: ["billing-status"] as const };
 
@@ -8,9 +8,14 @@ export const billingApi = {
   status: () => api.get<BillingStatus>("/billing/status"),
   checkoutPix: () => api.post<PixCheckout>("/billing/checkout/pix"),
   checkoutBoleto: (taxId: string) => api.post<BoletoCheckout>("/billing/checkout/boleto", { taxId }),
+  checkoutCard: () => api.post<HostedCheckout>("/billing/checkout/card"),
+  checkoutSubscription: () => api.post<HostedCheckout>("/billing/checkout/subscription"),
+  cancelSubscription: () => api.post<null>("/billing/cancel-subscription"),
 };
 
-export function useBillingStatus(options?: { refetchInterval?: number | false }) {
+export function useBillingStatus(options?: {
+  refetchInterval?: number | false | ((query: Query<BillingStatus>) => number | false);
+}) {
   return useQuery({
     queryKey: billingKeys.status,
     queryFn: async () => (await billingApi.status()).data,
@@ -25,5 +30,21 @@ export function useCheckoutPix() {
 export function useCheckoutBoleto() {
   return useMutation({
     mutationFn: async (taxId: string) => (await billingApi.checkoutBoleto(taxId)).data,
+  });
+}
+
+export function useCheckoutCard() {
+  return useMutation({ mutationFn: async () => (await billingApi.checkoutCard()).data });
+}
+
+export function useCheckoutSubscription() {
+  return useMutation({ mutationFn: async () => (await billingApi.checkoutSubscription()).data });
+}
+
+export function useCancelSubscription() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: billingApi.cancelSubscription,
+    onSuccess: () => qc.invalidateQueries({ queryKey: billingKeys.status }),
   });
 }

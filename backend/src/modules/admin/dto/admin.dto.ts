@@ -45,7 +45,7 @@ export class AdminPaymentDto {
   @ApiProperty({ format: 'uuid' }) userId: string;
   @ApiProperty() userName: string;
   @ApiProperty() userEmail: string;
-  @ApiProperty({ enum: ['PIX', 'BOLETO'] }) method: 'PIX' | 'BOLETO';
+  @ApiProperty({ enum: ['PIX', 'BOLETO', 'CARD'] }) method: 'PIX' | 'BOLETO' | 'CARD';
   @ApiProperty({ enum: ['PENDING', 'PAID', 'FAILED', 'EXPIRED', 'REFUNDED'] })
   status: 'PENDING' | 'PAID' | 'FAILED' | 'EXPIRED' | 'REFUNDED';
   @ApiProperty({ example: '25.00' }) amount: string;

@@ -1,15 +1,26 @@
 import { Injectable, Logger, type OnModuleDestroy, type OnModuleInit } from '@nestjs/common';
 import { AppConfigService } from '../../config/app-config.service.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import type { Prisma } from '../../generated/prisma/client.js';
 import { MailService } from '../mail/mail.service.js';
+import { RECURRING_GRACE_DAYS } from './billing.service.js';
 
 const JOB_INTERVAL_MS = 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+// Recorrência no cartão ativa (não cancelada): renova sozinha via webhook.
+const RECURRING: Prisma.SubscriptionWhereInput = {
+  abacatepaySubscriptionId: { not: null },
+  cancelAtPeriodEnd: false,
+};
+
 /**
- * Bloqueia assinaturas vencidas sem pagamento: trial expirado, ou período avulso
- * (Pix/boleto, sem renovação automática) que passou sem um novo pagamento. Também avisa
- * por e-mail quem está perto de vencer (uma vez por ciclo) e quem acabou de ser bloqueado.
+ * Bloqueia assinaturas vencidas sem pagamento: trial expirado, período avulso (Pix, boleto
+ * ou cartão à vista) que passou sem um novo pagamento, ou recorrência cancelada que chegou ao
+ * fim do ciclo já pago. Recorrência ativa só cai aqui se a renovação atrasar mais que
+ * RECURRING_GRACE_DAYS (webhook perdido) — o normal é sair de ACTIVE via webhook. Também
+ * avisa por e-mail quem está perto de vencer (uma vez por ciclo, exceto recorrência ativa)
+ * e quem acabou de ser bloqueado.
  * Desligado em NODE_ENV=test; `run(now)` exposto para testes.
  */
 @Injectable()
@@ -35,8 +46,18 @@ export class SubscriptionExpiryJobService implements OnModuleInit, OnModuleDestr
   }
 
   async run(now: Date = new Date()): Promise<{ trialsBlocked: number; periodsBlocked: number }> {
-    const trialsBlocked = await this.blockAndNotify('TRIALING', 'trialEndsAt', now);
-    const periodsBlocked = await this.blockAndNotify('ACTIVE', 'currentPeriodEnd', now);
+    const graceCutoff = new Date(now.getTime() - RECURRING_GRACE_DAYS * DAY_MS);
+    const trialsBlocked = await this.blockAndNotify({
+      status: 'TRIALING',
+      trialEndsAt: { lte: now },
+    });
+    const periodsBlocked = await this.blockAndNotify({
+      status: 'ACTIVE',
+      OR: [
+        { currentPeriodEnd: { lte: now }, NOT: RECURRING },
+        { currentPeriodEnd: { lte: graceCutoff }, ...RECURRING },
+      ],
+    });
     await this.notifyExpiringSoon(now);
     if (trialsBlocked || periodsBlocked) {
       this.logger.log({ trialsBlocked, periodsBlocked });
@@ -45,13 +66,9 @@ export class SubscriptionExpiryJobService implements OnModuleInit, OnModuleDestr
   }
 
   /** Busca quem vence agora, bloqueia e dispara o aviso de "acesso venceu". */
-  private async blockAndNotify(
-    status: 'TRIALING' | 'ACTIVE',
-    field: 'trialEndsAt' | 'currentPeriodEnd',
-    now: Date,
-  ): Promise<number> {
+  private async blockAndNotify(where: Prisma.SubscriptionWhereInput): Promise<number> {
     const expired = await this.prisma.subscription.findMany({
-      where: { status, [field]: { lte: now } },
+      where,
       select: { id: true, user: { select: { email: true, name: true } } },
     });
     if (expired.length === 0) return 0;
@@ -78,7 +95,7 @@ export class SubscriptionExpiryJobService implements OnModuleInit, OnModuleDestr
         expiryNoticeSentAt: null,
         OR: [
           { status: 'TRIALING', trialEndsAt: { gt: now, lte: window } },
-          { status: 'ACTIVE', currentPeriodEnd: { gt: now, lte: window } },
+          { status: 'ACTIVE', currentPeriodEnd: { gt: now, lte: window }, NOT: RECURRING },
         ],
       },
       select: {

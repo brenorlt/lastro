@@ -176,9 +176,11 @@ Só variáveis públicas. **Nenhum segredo no frontend.**
 
 Todo cadastro ganha **7 dias de teste grátis** (`BILLING_TRIAL_DAYS`). Ao vencer sem pagamento, o
 `SubscriptionGuard` bloqueia as rotas da API (exceto login/perfil/cobrança) com `402
-SUBSCRIPTION_REQUIRED`, e o frontend redireciona para `/assinatura`. Três formas de pagamento, via
-[AbacatePay](https://www.abacatepay.com): Pix avulso, cartão avulso (ambos liberam 30 dias; renovação
-manual) e cartão com recorrência (assinatura, renova sozinha).
+SUBSCRIPTION_REQUIRED`, e o frontend redireciona para `/assinatura`. Quatro formas de pagamento, via
+[AbacatePay](https://www.abacatepay.com): Pix, boleto e cartão avulsos (liberam 30 dias; renovação
+manual) e cartão com recorrência (assinatura mensal, renova sozinha; cancelável sem multa, mantendo o
+acesso até o fim do ciclo pago). Os produtos da AbacatePay usados nos checkouts de cartão são criados
+automaticamente no primeiro checkout (um por preço de `BILLING_PLAN_PRICE_CENTS`).
 
 Setup em produção (a conta e a chave são criadas por você, não pelo agente):
 

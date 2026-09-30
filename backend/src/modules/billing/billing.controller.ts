@@ -23,6 +23,7 @@ import {
   BillingStatusDto,
   BoletoCheckoutDto,
   CheckoutBoletoDto,
+  HostedCheckoutDto,
   PixCheckoutDto,
 } from './billing.dto.js';
 
@@ -59,6 +60,37 @@ export class BillingController {
     @Body() dto: CheckoutBoletoDto,
   ): Promise<BoletoCheckoutDto> {
     return this.billing.checkoutBoleto(user.id, dto.taxId);
+  }
+
+  @Post('checkout/card')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Gera um checkout de cartão avulso (30 dias de acesso)' })
+  @ApiEnvelope(HostedCheckoutDto)
+  checkoutCard(@CurrentUser() user: AuthUser): Promise<HostedCheckoutDto> {
+    return this.billing.checkoutCard(user.id);
+  }
+
+  @Post('checkout/subscription')
+  @HttpCode(HttpStatus.OK)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Gera um checkout de assinatura mensal recorrente no cartão' })
+  @ApiEnvelope(HostedCheckoutDto)
+  @ApiErrors(ErrorCode.CONFLICT)
+  checkoutSubscription(@CurrentUser() user: AuthUser): Promise<HostedCheckoutDto> {
+    return this.billing.checkoutSubscription(user.id);
+  }
+
+  @Post('cancel-subscription')
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Cancela a recorrência no cartão',
+    description: 'Sem multa: o acesso continua ativo até o fim do ciclo já pago.',
+  })
+  @ApiEnvelope(null, { status: 204 })
+  cancelSubscription(@CurrentUser() user: AuthUser): Promise<void> {
+    return this.billing.cancelSubscription(user.id);
   }
 
   @Public()

@@ -10,6 +10,19 @@ interface AbacatePayEnvelope<T> {
   error: string | null;
 }
 
+export interface AbacatePayProduct {
+  id: string;
+  externalId: string;
+}
+
+/** Checkout hospedado (cartão avulso ou checkout de assinatura) — `bill_...`. */
+export interface AbacatePayHostedCheckout {
+  id: string;
+  url: string;
+}
+
+export type AbacatePayCycle = 'WEEKLY' | 'MONTHLY' | 'QUARTERLY' | 'SEMIANNUALLY' | 'ANNUALLY';
+
 export interface AbacatePayCustomer {
   id: string;
 }
@@ -93,4 +106,69 @@ export class AbacatePayClient {
       },
     });
   }
+
+  /** Idempotente: procura o produto por `externalId` antes de criar. */
+  async ensureProduct(input: {
+    externalId: string;
+    name: string;
+    priceCents: number;
+    cycle?: AbacatePayCycle;
+  }): Promise<AbacatePayProduct> {
+    const existing = await this.call<AbacatePayProduct[]>(
+      'GET',
+      `/products/list?externalId=${encodeURIComponent(input.externalId)}`,
+    );
+    const found = existing.find((p) => p.externalId === input.externalId);
+    if (found) return found;
+    return this.call<AbacatePayProduct>('POST', '/products/create', {
+      externalId: input.externalId,
+      name: input.name,
+      price: input.priceCents,
+      currency: 'BRL',
+      ...(input.cycle ? { cycle: input.cycle } : {}),
+    });
+  }
+
+  /** Checkout hospedado de pagamento único no cartão (à vista). */
+  async createCardCheckout(input: HostedCheckoutInput): Promise<AbacatePayHostedCheckout> {
+    return this.call<AbacatePayHostedCheckout>('POST', '/checkouts/create', {
+      ...hostedCheckoutBody(input),
+      card: { maxInstallments: 1 },
+    });
+  }
+
+  /**
+   * Checkout de assinatura no cartão. A assinatura em si (`subs_...`) só passa a existir
+   * depois do pagamento — chega pelo webhook `subscription.completed`.
+   */
+  async createSubscriptionCheckout(input: HostedCheckoutInput): Promise<AbacatePayHostedCheckout> {
+    return this.call<AbacatePayHostedCheckout>('POST', '/subscriptions/create', {
+      ...hostedCheckoutBody(input),
+      card: { maxInstallments: 1 },
+    });
+  }
+
+  /** Cancela na hora do lado da AbacatePay (sem cobranças futuras). */
+  async cancelSubscription(abacatepaySubscriptionId: string): Promise<void> {
+    await this.call('POST', '/subscriptions/cancel', { id: abacatepaySubscriptionId });
+  }
+}
+
+interface HostedCheckoutInput {
+  productId: string;
+  customerId: string;
+  externalId: string;
+  returnUrl: string;
+  completionUrl: string;
+}
+
+function hostedCheckoutBody(input: HostedCheckoutInput) {
+  return {
+    items: [{ id: input.productId, quantity: 1 }],
+    methods: ['CARD'],
+    customerId: input.customerId,
+    externalId: input.externalId,
+    returnUrl: input.returnUrl,
+    completionUrl: input.completionUrl,
+  };
 }
