@@ -139,28 +139,30 @@ describe('Transactions (e2e)', () => {
       expect(future.status).toBe('PENDING');
       expect(await s.balance(acc)).toBe('130.15');
 
+      // Pago adiantado: confirmar um agendado vale e já move o saldo.
       const confirmFuture = await s.client
         .post(`/api/transactions/${future.id}/confirm`)
-        .expect(400);
-      expect(error(confirmFuture).details?.[0].field).toBe('status');
+        .expect(200);
+      expect(data<Tx>(confirmFuture).status).toBe('CLEARED');
+      expect(await s.balance(acc)).toBe('31.15');
     });
 
-    it('CLEARED com data futura → 400 no campo status', async () => {
-      const res = await s
-        .create({
-          type: 'EXPENSE',
-          amount: '1.00',
-          description: 'X',
-          date: addDays(TODAY, 1),
-          status: 'CLEARED',
-          accountId: acc,
-        })
-        .expect(400);
-      expect(error(res)).toMatchObject({ code: 'VALIDATION_ERROR' });
-      expect(error(res).details?.[0]).toMatchObject({
-        field: 'status',
-        message: 'Lançamentos futuros ficam como pendentes',
-      });
+    it('CLEARED com data futura é aceito e move o saldo', async () => {
+      const before = await s.balance(acc);
+      const [paid] = data<Tx[]>(
+        await s
+          .create({
+            type: 'EXPENSE',
+            amount: '1.00',
+            description: 'X',
+            date: addDays(TODAY, 1),
+            status: 'CLEARED',
+            accountId: acc,
+          })
+          .expect(201),
+      );
+      expect(paid.status).toBe('CLEARED');
+      expect(await s.balance(acc)).toBe((Number(before) - 1).toFixed(2));
     });
 
     it('confirm/unconfirm movem o saldo', async () => {
@@ -909,12 +911,12 @@ describe('Transactions (e2e)', () => {
     await s.client
       .patch(`/api/transactions/${made[0]}`)
       .send({ date: addDays(TODAY, 7) })
-      .expect(200); // vira PENDING
+      .expect(200); // continua pago: status não depende da data
     await s.client.delete(`/api/transactions/${made[3]}`).expect(204);
     await s.client.post(`/api/transactions/${made[2]}/duplicate`).expect(201);
     await s.client.delete(`/api/transactions/${made[7]}`).expect(204);
 
-    expect(data<Tx>(await s.client.get(`/api/transactions/${made[0]}`)).status).toBe('PENDING');
+    expect(data<Tx>(await s.client.get(`/api/transactions/${made[0]}`)).status).toBe('CLEARED');
     await assertInvariant(s.user.id);
   });
 });

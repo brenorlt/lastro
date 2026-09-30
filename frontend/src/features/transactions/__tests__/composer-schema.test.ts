@@ -5,12 +5,12 @@ const base = () => ({ ...emptyComposer("EXPENSE", "2026-09-24", "acc-1"), amount
 describe("composer schema", () => {
   it("despesa válida vira input da API com status efetivado", () => {
     const v = composerSchema.parse(base());
-    expect(toTransactionInput(v, "2026-09-24")).toMatchObject({ type: "EXPENSE", amount: "120.50", status: "CLEARED", accountId: "acc-1" });
+    expect(toTransactionInput(v)).toMatchObject({ type: "EXPENSE", amount: "120.50", status: "CLEARED", accountId: "acc-1" });
   });
 
-  it("data futura é sempre pendente, mesmo marcada como paga", () => {
-    const v = composerSchema.parse({ ...base(), date: "2026-10-05", paid: true });
-    expect(statusOf(v, "2026-09-24")).toBe("PENDING");
+  it("data futura respeita o switch: pago adiantado ou agendado", () => {
+    expect(statusOf(composerSchema.parse({ ...base(), date: "2026-10-05", paid: true }))).toBe("CLEARED");
+    expect(statusOf(composerSchema.parse({ ...base(), date: "2026-10-05", paid: false }))).toBe("PENDING");
   });
 
   it("valor zero e descrição vazia são recusados", () => {
@@ -24,12 +24,12 @@ describe("composer schema", () => {
     expect(same.success).toBe(false);
     expect(same.error?.issues[0]?.path).toEqual(["toAccountId"]);
     const ok = composerSchema.parse({ ...base(), mode: "TRANSFER", description: "", toAccountId: "acc-2" });
-    expect(toTransferInput(ok, "2026-09-24")).toMatchObject({ fromAccountId: "acc-1", toAccountId: "acc-2", description: undefined });
+    expect(toTransferInput(ok)).toMatchObject({ fromAccountId: "acc-1", toAccountId: "acc-2", description: undefined });
   });
 
   it("parcelado envia o total e o número de parcelas", () => {
     const v = composerSchema.parse({ ...base(), amount: "1000.00", repeat: "INSTALLMENTS", installments: 10 });
-    expect(toTransactionInput(v, "2026-09-24").repeat).toEqual({ kind: "INSTALLMENTS", count: 10 });
+    expect(toTransactionInput(v).repeat).toEqual({ kind: "INSTALLMENTS", count: 10 });
   });
 
   it("recorrente não pode terminar antes de começar", () => {

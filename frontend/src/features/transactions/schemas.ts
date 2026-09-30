@@ -88,18 +88,18 @@ function repeatOf(v: ComposerValues): RepeatInput | undefined {
   return undefined;
 }
 
-/** Futuro nunca é "pago": vira pendente automaticamente (regra da API). */
-export function statusOf(v: ComposerValues, today: string) {
-  return v.date > today ? "PENDING" : v.paid ? "CLEARED" : "PENDING";
+/** O switch "pago" manda; a data só define o padrão dele (futuro começa desligado). */
+export function statusOf(v: ComposerValues) {
+  return v.paid ? "CLEARED" : "PENDING";
 }
 
-export function toTransactionInput(v: ComposerValues, today: string): TransactionInput {
+export function toTransactionInput(v: ComposerValues): TransactionInput {
   return {
     type: v.mode as "INCOME" | "EXPENSE",
     amount: v.amount,
     description: v.description.trim(),
     date: v.date,
-    status: statusOf(v, today),
+    status: statusOf(v),
     ...(v.mode === "EXPENSE" && v.creditCardId ? { creditCardId: v.creditCardId, accountId: null } : { accountId: v.accountId!, creditCardId: null }),
     categoryId: v.categoryId,
     notes: v.notes.trim() || null,
@@ -108,14 +108,14 @@ export function toTransactionInput(v: ComposerValues, today: string): Transactio
   };
 }
 
-export function toTransferInput(v: ComposerValues, today: string): TransferInput {
+export function toTransferInput(v: ComposerValues): TransferInput {
   return {
     fromAccountId: v.accountId!,
     toAccountId: v.toAccountId!,
     amount: v.amount,
     date: v.date,
     description: v.description.trim() || undefined,
-    status: statusOf(v, today),
+    status: statusOf(v),
     notes: v.notes.trim() || null,
   };
 }

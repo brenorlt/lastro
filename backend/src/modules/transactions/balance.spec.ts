@@ -3,7 +3,6 @@ import { type BalanceRelevant, balanceDelta, balanceEffects, expectedBalance } f
 import { Prisma } from '../../generated/prisma/client.js';
 import { computeTotals, type TotalsRow } from './totals.js';
 import { resolveStatus } from './transactions.service.js';
-import { AppException } from '../../common/errors/app.exception.js';
 
 const A = 'acc-a';
 const B = 'acc-b';
@@ -86,10 +85,10 @@ describe('totais', () => {
 });
 
 describe('regra de status', () => {
-  it('padrão pela data e bloqueia CLEARED futuro', () => {
+  it('padrão pela data; status explícito vale mesmo no futuro', () => {
     expect(resolveStatus(undefined, '2026-01-01', '2026-01-01')).toBe('CLEARED');
     expect(resolveStatus(undefined, '2026-01-02', '2026-01-01')).toBe('PENDING');
     expect(resolveStatus('PENDING', '2025-01-01', '2026-01-01')).toBe('PENDING');
-    expect(() => resolveStatus('CLEARED', '2026-01-02', '2026-01-01')).toThrow(AppException);
+    expect(resolveStatus('CLEARED', '2026-01-02', '2026-01-01')).toBe('CLEARED');
   });
 });

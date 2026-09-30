@@ -89,7 +89,7 @@ function ComposerBody() {
 
   const submitEdit = async (values: ComposerValues, scope: SeriesScope) => {
     if (!editing) return;
-    const base = toTransactionInput(values, today);
+    const base = toTransactionInput(values);
     const input =
       editing.type === "TRANSFER"
         ? { amount: values.amount, date: values.date, description: values.description.trim() || "Transferência", status: base.status, notes: base.notes, fromAccountId: values.accountId!, toAccountId: values.toAccountId! }
@@ -105,8 +105,8 @@ function ComposerBody() {
         if (isSeries(editing)) return setPendingScope(values);
         return await submitEdit(values, "single");
       }
-      if (values.mode === "TRANSFER") await transfer.mutateAsync(toTransferInput(values, today));
-      else await create.mutateAsync(toTransactionInput(values, today));
+      if (values.mode === "TRANSFER") await transfer.mutateAsync(toTransferInput(values));
+      else await create.mutateAsync(toTransactionInput(values));
       close();
     } catch (err) {
       onError(err);
@@ -221,7 +221,16 @@ function ComposerBody() {
 
           <div className="grid gap-5 sm:grid-cols-2 sm:items-end">
             <Field label="Data" error={errors.date?.message}>
-              <Input type="date" {...register("date")} />
+              <Input
+                type="date"
+                {...register("date", {
+                  // Ao cruzar hoje, o switch volta ao padrão da data (futuro = agendado); o usuário ainda pode marcar como pago.
+                  onChange: (e) => {
+                    const next = String(e.target.value) > today;
+                    if (next !== future) setValue("paid", !next);
+                  },
+                })}
+              />
             </Field>
             {onCard ? (
               <p className="flex h-10 items-center rounded-md bg-surface-sunken px-3 text-xs text-ink-2">Entra na fatura conforme a data da compra.</p>
@@ -231,14 +240,18 @@ function ComposerBody() {
               name="paid"
               render={({ field }) => (
                 <label className="flex h-10 items-center justify-between gap-3 rounded-md bg-surface-sunken px-3">
-                  <span className="text-sm text-ink">{future ? "Agendado" : paidLabel}</span>
-                  <Switch checked={!future && field.value} disabled={future} onCheckedChange={field.onChange} aria-label={paidLabel} />
+                  <span className="text-sm text-ink">{paidLabel}</span>
+                  <Switch checked={field.value} onCheckedChange={field.onChange} aria-label={paidLabel} />
                 </label>
               )}
             />
             )}
           </div>
-          {future && !onCard && <p className="-mt-3 text-xs text-ink-3">Datas futuras ficam pendentes e não alteram o saldo até serem confirmadas.</p>}
+          {future && !onCard && (
+            <p className="-mt-3 text-xs text-ink-3">
+              {v.paid ? "Pago adiantado: já entra no saldo." : "Fica agendado e não altera o saldo até ser confirmado."}
+            </p>
+          )}
 
           {!editing && mode !== "TRANSFER" && (
             <div className="space-y-3 rounded-lg ring-1 ring-line p-4">

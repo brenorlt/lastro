@@ -58,19 +58,19 @@ export interface ImportRowInput {
   categoryId?: string | null;
 }
 
-const FUTURE_CLEARED_MESSAGE = 'Lançamentos futuros ficam como pendentes';
-
 function validation(field: string, message: string): AppException {
   return new AppException(ErrorCode.VALIDATION_ERROR, { details: [{ field, message }] });
 }
 
-/** Regra de status: padrão CLEARED se data ≤ hoje, senão PENDING; CLEARED no futuro é inválido. */
+/**
+ * Regra de status: sem status explícito, CLEARED se data ≤ hoje, senão PENDING. Status
+ * explícito sempre vale — dá para marcar como pago um lançamento futuro (ex.: conta paga adiantado).
+ */
 export function resolveStatus(
   requested: ApiStatus | undefined,
   date: DateOnly,
   today: DateOnly,
 ): ApiStatus {
-  if (requested === 'CLEARED' && date > today) throw validation('status', FUTURE_CLEARED_MESSAGE);
   return requested ?? (date <= today ? 'CLEARED' : 'PENDING');
 }
 
@@ -532,11 +532,9 @@ export class TransactionsService {
     const status: ApiStatus =
       dto.status !== undefined
         ? resolveStatus(dto.status, date, today)
-        : current.status === 'CLEARED' && date > today
-          ? 'PENDING' // mover para o futuro sem status explícito vira pendente
-          : current.status === 'CLEARED'
-            ? 'CLEARED'
-            : 'PENDING';
+        : current.status === 'CLEARED'
+          ? 'CLEARED'
+          : 'PENDING';
 
     // Membros da série afetados (além da própria linha).
     const members = scope === 'single' ? [] : await this.seriesMembers(userId, current, scope);

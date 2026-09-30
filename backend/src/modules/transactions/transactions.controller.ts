@@ -126,7 +126,7 @@ export class TransactionsController {
   @Post(':id/confirm')
   @HttpCode(HttpStatus.OK)
   @IdParam()
-  @ApiOperation({ summary: 'Marca como CLEARED (afeta o saldo); data futura → 400' })
+  @ApiOperation({ summary: 'Marca como CLEARED (afeta o saldo), inclusive com data futura' })
   @ApiEnvelope(TransactionDto)
   @ApiErrors(ErrorCode.TRANSACTION_NOT_FOUND, ErrorCode.VALIDATION_ERROR)
   confirm(@CurrentUser() user: AuthUser, @TransactionId() id: string): Promise<TransactionDto> {
