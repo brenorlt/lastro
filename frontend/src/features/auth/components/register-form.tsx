@@ -14,6 +14,7 @@ import { useApiFormErrors } from "@/hooks/use-api-form-errors";
 import { authApi } from "../api";
 import { registerSchema, type RegisterInput } from "../schemas";
 import { CheckInbox } from "./check-inbox";
+import { GoogleSignIn } from "./google-sign-in";
 
 const FIELDS = ["name", "email", "password"] as const;
 
@@ -50,6 +51,7 @@ export function RegisterForm() {
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       {formError && <FormAlert>{formError.message}</FormAlert>}
+      <GoogleSignIn label="Criar conta com Google" />
       <Field label="Nome" error={errors.name?.message}>
         <Input autoComplete="name" {...register("name")} />
       </Field>

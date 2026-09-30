@@ -15,10 +15,11 @@ import { useApiFormErrors } from "@/hooks/use-api-form-errors";
 import { safeRedirect } from "@/lib/safe-redirect";
 import { authApi } from "../api";
 import { loginSchema, type LoginInput } from "../schemas";
+import { GoogleSignIn } from "./google-sign-in";
 
 const FIELDS = ["email", "password"] as const;
 
-export function LoginForm({ next, notice }: { next?: string; notice?: string }) {
+export function LoginForm({ next, notice, error }: { next?: string; notice?: string; error?: string }) {
   const router = useRouter();
   const [resending, setResending] = useState(false);
   const {
@@ -56,6 +57,8 @@ export function LoginForm({ next, notice }: { next?: string; notice?: string }) 
   return (
     <form onSubmit={handleSubmit(onSubmit)} noValidate className="space-y-5">
       {notice && !formError && <FormAlert tone="success">{notice}</FormAlert>}
+      {error && !formError && <FormAlert>{error}</FormAlert>}
+      <GoogleSignIn next={next} />
       {formError && (
         <FormAlert
           action={
