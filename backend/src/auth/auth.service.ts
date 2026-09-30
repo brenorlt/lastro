@@ -16,6 +16,8 @@ import type {
   ResetPasswordDto,
 } from './dto/auth-requests.dto.js';
 import type { AuthPayloadDto, SessionDto, UserDto } from './dto/auth-responses.dto.js';
+import type { GoogleProfile } from './oauth/google-oauth.service.js';
+import { noPasswordYet } from './password/no-password.error.js';
 import { PasswordService } from './password/password.service.js';
 import type { ClientContext } from './security/client-context.js';
 import {
@@ -94,21 +96,9 @@ export class AuthService {
     }
 
     try {
-      const trialDays = this.config.get('BILLING_TRIAL_DAYS');
-      const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
       const { user, token } = await this.prisma.$transaction(async (tx) => {
         const created = await tx.user.create({
-          data: {
-            email: dto.email,
-            name: dto.name,
-            passwordHash,
-            categories: {
-              createMany: {
-                data: DEFAULT_CATEGORIES.map((category) => ({ ...category, isDefault: true })),
-              },
-            },
-            subscription: { create: { trialEndsAt } },
-          },
+          data: { email: dto.email, name: dto.name, passwordHash, ...this.newUserDefaults() },
         });
         const secret = await this.issueToken(tx, created.id, 'EMAIL_VERIFICATION');
         return { user: created, token: secret };
@@ -160,6 +150,19 @@ export class AuthService {
       throw new AppException(ErrorCode.INVALID_CREDENTIALS);
     }
 
+    // Conta criada pelo Google, sem senha: mesma resposta de senha errada, sem contar tentativa.
+    if (user.passwordHash === null) {
+      await this.passwords.verifyDummy(dto.password);
+      await this.events.record({
+        type: 'LOGIN_FAILED',
+        userId: user.id,
+        email: user.email,
+        context,
+        metadata: { reason: 'no_password' },
+      });
+      throw new AppException(ErrorCode.INVALID_CREDENTIALS);
+    }
+
     const now = new Date();
     if (user.lockedUntil && isLocked(user, now)) {
       await this.events.record({
@@ -172,7 +175,8 @@ export class AuthService {
       throw accountLocked(user.lockedUntil, now);
     }
 
-    const valid = await this.passwords.verify(user.passwordHash, dto.password);
+    const { passwordHash } = user;
+    const valid = await this.passwords.verify(passwordHash, dto.password);
     if (!valid) {
       const next = registerFailure(user, this.lockoutConfig, now);
       await this.prisma.user.update({
@@ -201,7 +205,7 @@ export class AuthService {
     }
 
     const update: Prisma.UserUpdateInput = { ...CLEARED_LOCKOUT };
-    if (this.passwords.needsRehash(user.passwordHash)) {
+    if (this.passwords.needsRehash(passwordHash)) {
       update.passwordHash = await this.passwords.hash(dto.password);
     }
     await this.prisma.user.update({ where: { id: user.id }, data: update });
@@ -211,15 +215,80 @@ export class AuthService {
       throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
     }
 
-    const { session, refreshToken } = await this.sessions.create(user.id, context);
-    await this.events.record({
-      type: 'LOGIN_SUCCESS',
-      userId: user.id,
-      email: user.email,
-      context,
-      metadata: { sessionId: session.id },
+    return this.startSession(user, context, { method: 'password' });
+  }
+
+  /**
+   * Login/cadastro com uma identidade Google já validada (id_token conferido).
+   * Ordem: vínculo existente pelo `sub` → vínculo novo por e-mail verificado → usuário novo.
+   */
+  async loginWithGoogle(
+    profile: GoogleProfile,
+    context: ClientContext,
+    retryOnConflict = true,
+  ): Promise<AuthResult & { isNewUser: boolean }> {
+    if (!profile.emailVerified) throw new AppException(ErrorCode.EMAIL_NOT_VERIFIED);
+
+    const identity = await this.prisma.oAuthIdentity.findUnique({
+      where: { provider_providerUserId: { provider: 'GOOGLE', providerUserId: profile.sub } },
+      include: { user: true },
     });
-    return this.buildResult(user, session.id, refreshToken, session.expiresAt);
+    if (identity) {
+      if (identity.user.deletedAt) throw new AppException(ErrorCode.UNAUTHORIZED);
+      const result = await this.startSession(identity.user, context, { method: 'google' });
+      return { ...result, isNewUser: false };
+    }
+
+    const existing = await this.prisma.user.findUnique({ where: { email: profile.email } });
+    if (existing) {
+      if (existing.deletedAt) throw new AppException(ErrorCode.UNAUTHORIZED);
+      const linked = await this.prisma.$transaction(async (tx) => {
+        await tx.oAuthIdentity.create({
+          data: {
+            userId: existing.id,
+            provider: 'GOOGLE',
+            providerUserId: profile.sub,
+            email: profile.email,
+          },
+        });
+        if (existing.emailVerifiedAt) return existing;
+        // Conta local nunca confirmada: quem definiu aquela senha pode não ser o dono do e-mail
+        // (pre-account hijacking). O Google comprova o e-mail → descarta senha e sessões.
+        await this.sessions.revokeAllForUser(existing.id, undefined, tx);
+        return tx.user.update({
+          where: { id: existing.id },
+          data: { passwordHash: null, emailVerifiedAt: new Date(), ...CLEARED_LOCKOUT },
+        });
+      });
+      const result = await this.startSession(linked, context, {
+        method: 'google',
+        linked: true,
+        passwordDiscarded: !existing.emailVerifiedAt,
+      });
+      return { ...result, isNewUser: false };
+    }
+
+    try {
+      const created = await this.prisma.user.create({
+        data: {
+          email: profile.email,
+          name: profile.name.slice(0, 120),
+          passwordHash: null,
+          avatarUrl: profile.picture,
+          emailVerifiedAt: new Date(),
+          oauthIdentities: {
+            create: { provider: 'GOOGLE', providerUserId: profile.sub, email: profile.email },
+          },
+          ...this.newUserDefaults(),
+        },
+      });
+      const result = await this.startSession(created, context, { method: 'google', created: true });
+      return { ...result, isNewUser: true };
+    } catch (error) {
+      // Dois callbacks simultâneos: o outro já criou/vinculou — tenta de novo pelo caminho normal.
+      if (!retryOnConflict || !isUniqueViolation(error)) throw error;
+      return this.loginWithGoogle(profile, context, false);
+    }
   }
 
   async refresh(rawToken: string | undefined, context: ClientContext): Promise<AuthResult> {
@@ -319,6 +388,7 @@ export class AuthService {
     const user = await this.prisma.user.findUnique({ where: { id: auth.id } });
     if (!user || user.deletedAt) throw new AppException(ErrorCode.UNAUTHORIZED);
 
+    if (user.passwordHash === null) throw noPasswordYet('currentPassword');
     if (!(await this.passwords.verify(user.passwordHash, dto.currentPassword))) {
       throw new AppException(ErrorCode.INVALID_PASSWORD, {
         details: [{ field: 'currentPassword', message: 'Senha atual incorreta' }],
@@ -394,6 +464,36 @@ export class AuthService {
       maxFailedAttempts: this.config.get('AUTH_MAX_FAILED_ATTEMPTS'),
       lockoutMinutes: this.config.get('AUTH_LOCKOUT_MINUTES'),
     };
+  }
+
+  /** Dados de todo usuário novo: categorias padrão e assinatura em período de teste. */
+  private newUserDefaults() {
+    const trialDays = this.config.get('BILLING_TRIAL_DAYS');
+    const trialEndsAt = new Date(Date.now() + trialDays * 24 * 60 * 60 * 1000);
+    return {
+      categories: {
+        createMany: {
+          data: DEFAULT_CATEGORIES.map((category) => ({ ...category, isDefault: true })),
+        },
+      },
+      subscription: { create: { trialEndsAt } },
+    } satisfies Partial<Prisma.UserCreateInput>;
+  }
+
+  private async startSession(
+    user: User,
+    context: ClientContext,
+    metadata: Record<string, unknown>,
+  ): Promise<AuthResult> {
+    const { session, refreshToken } = await this.sessions.create(user.id, context);
+    await this.events.record({
+      type: 'LOGIN_SUCCESS',
+      userId: user.id,
+      email: user.email,
+      context,
+      metadata: { ...metadata, sessionId: session.id },
+    });
+    return this.buildResult(user, session.id, refreshToken, session.expiresAt);
   }
 
   private async buildResult(

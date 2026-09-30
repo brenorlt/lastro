@@ -11,3 +11,6 @@ process.env.AUTH_REQUIRE_EMAIL_VERIFICATION = 'true';
 process.env.JWT_ACCESS_SECRET ??= 'e2e-access-secret-0123456789abcdef0123456789';
 process.env.JWT_REFRESH_SECRET ??= 'e2e-refresh-secret-0123456789abcdef012345678';
 process.env.UPLOAD_DIR = `${process.env.TMPDIR ?? '/tmp'}/lastro-e2e-uploads`;
+// Credenciais fictícias: a troca de código com o Google é substituída nos testes.
+process.env.GOOGLE_CLIENT_ID = 'e2e-client-id.apps.googleusercontent.com';
+process.env.GOOGLE_CLIENT_SECRET = 'e2e-client-secret';

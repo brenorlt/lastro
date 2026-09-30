@@ -26,6 +26,11 @@ const csvUrls = z
   )
   .pipe(z.array(z.url({ error: 'CORS_ORIGINS deve conter apenas URLs válidas' })));
 
+const optionalString = z
+  .string()
+  .optional()
+  .transform((value) => value?.trim() || undefined);
+
 export const envSchema = z
   .object({
     NODE_ENV: z.enum(['development', 'staging', 'production', 'test']).default('development'),
@@ -68,6 +73,11 @@ export const envSchema = z
       .optional()
       .transform((value) => value?.trim() || undefined),
 
+    // Login com Google (OAuth 2.0 / OpenID Connect). Ambos vazios = botão desativado.
+    // Redirect URI cadastrada no Google Cloud: ${APP_URL}/api/auth/google/callback
+    GOOGLE_CLIENT_ID: optionalString,
+    GOOGLE_CLIENT_SECRET: optionalString,
+
     // Diretório de arquivos enviados (avatares). Em Docker, monte um volume aqui.
     UPLOAD_DIR: z.string().min(1).default('./storage'),
 
@@ -100,6 +110,10 @@ export const envSchema = z
   .refine((env) => env.MAIL_TRANSPORT !== 'smtp' || Boolean(env.SMTP_URL), {
     path: ['SMTP_URL'],
     error: 'SMTP_URL é obrigatório quando MAIL_TRANSPORT=smtp',
+  })
+  .refine((env) => Boolean(env.GOOGLE_CLIENT_ID) === Boolean(env.GOOGLE_CLIENT_SECRET), {
+    path: ['GOOGLE_CLIENT_SECRET'],
+    error: 'GOOGLE_CLIENT_ID e GOOGLE_CLIENT_SECRET devem ser definidos juntos',
   })
   .refine((env) => env.MAIL_TRANSPORT !== 'resend' || Boolean(env.RESEND_API_KEY), {
     path: ['RESEND_API_KEY'],

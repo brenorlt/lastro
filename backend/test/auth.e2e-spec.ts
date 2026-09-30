@@ -106,7 +106,7 @@ describe('Auth (e2e)', () => {
         include: { categories: true },
       });
       expect(user.name).toBe('Maria Teste');
-      expect(user.passwordHash.startsWith('$argon2id$')).toBe(true);
+      expect(user.passwordHash?.startsWith('$argon2id$')).toBe(true);
       expect(user.categories).toHaveLength(15);
       const tokens = await ctx.prisma.verificationToken.findMany({ where: { userId: user.id } });
       expect(tokens).toHaveLength(1);

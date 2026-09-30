@@ -42,6 +42,12 @@ services:
         value: ./storage
       - key: MAIL_TRANSPORT
         value: log
+      # Login com Google — OAuth Client "Web" no Google Cloud com a redirect URI
+      # ${APP_URL}/api/auth/google/callback. Ambos vazios = login com Google desativado.
+      - key: GOOGLE_CLIENT_ID
+        sync: false
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false
       - key: ABACATEPAY_API_KEY
         sync: false
       - key: ABACATEPAY_WEBHOOK_SECRET

@@ -29,7 +29,12 @@ export class PasswordService implements OnModuleInit {
     return hash(password, this.options);
   }
 
-  async verify(passwordHash: string, password: string): Promise<boolean> {
+  /** `null` (conta sem senha, só login social) nunca confere — mas custa o mesmo tempo. */
+  async verify(passwordHash: string | null, password: string): Promise<boolean> {
+    if (passwordHash === null) {
+      await this.verifyDummy(password);
+      return false;
+    }
     try {
       return await verify(passwordHash, password);
     } catch {

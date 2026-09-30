@@ -1,4 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
+import { noPasswordYet } from '../../auth/password/no-password.error.js';
 import { PasswordService } from '../../auth/password/password.service.js';
 import type { ClientContext } from '../../auth/security/client-context.js';
 import { SecurityEventsService } from '../../auth/security/security-events.service.js';
@@ -88,6 +89,7 @@ export class UsersService {
    */
   async deleteAccount(userId: string, password: string, context: ClientContext): Promise<void> {
     const user = await this.findActive(userId);
+    if (user.passwordHash === null) throw noPasswordYet('password');
     if (!(await this.passwords.verify(user.passwordHash, password))) {
       throw new AppException(ErrorCode.INVALID_PASSWORD, {
         message: 'Senha incorreta',

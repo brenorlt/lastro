@@ -20,6 +20,27 @@ API é **same-origin** e os cookies são first-party. CORS continua ativo para o
 | GET | `/sessions` | bearer | `SessionDto[]` ativas, mais recentes primeiro |
 | DELETE | `/sessions/:id` | bearer | 204 · 404 `NOT_FOUND` (inexistente, já revogada ou de outro usuário) |
 | POST | `/sessions/revoke-others` | bearer | 200 `{ revoked: n }` |
+| GET | `/google` | pública, 20/min | 302 para o Google (ver "Login com Google") |
+| GET | `/google/callback` | cookie `lastro_oauth`, 20/min | 302 para `/onboarding`, `?next=` ou `/painel` + cookies · 302 `/entrar?erro=…` |
+
+## Login com Google
+
+Authorization Code + PKCE (OpenID Connect), sem SDK no frontend: o botão é um link para
+`/api/auth/google`. Ativo quando `GOOGLE_CLIENT_ID` e `GOOGLE_CLIENT_SECRET` estão definidos; a
+redirect URI cadastrada no Google é `${APP_URL}/api/auth/google/callback` (passa pelo proxy do Next,
+então os cookies são first-party).
+
+- `state`, `nonce`, `code_verifier` e o `next` saneado vão num JWT assinado no cookie
+  `lastro_oauth` (`HttpOnly; SameSite=Lax; Path=/api/auth/google`, 10 min, uso único).
+- O `id_token` é validado com o JWKS do Google (assinatura, `iss`, `aud`, `exp`) e o `nonce`.
+  `email_verified=false` é recusado.
+- Resolução do usuário (`oauth_identities`, único por `provider + sub`): vínculo existente →
+  conta com o mesmo e-mail → usuário novo (trial + categorias padrão, e-mail já verificado, sem
+  senha). Vincular a uma conta local **não verificada** apaga a senha e revoga as sessões dela
+  (defesa contra pre-account hijacking).
+- Contas sem senha recebem `INVALID_CREDENTIALS` no login por senha e definem uma via
+  "Esqueci minha senha". O bloqueio por força bruta não se aplica ao Google (não há senha em jogo).
+- Erros voltam como `/entrar?erro=google_cancelado|google_email_nao_verificado|google_conta_indisponivel|google_indisponivel|google_falhou`.
 
 ## Senhas
 

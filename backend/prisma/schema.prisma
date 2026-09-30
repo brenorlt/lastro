@@ -213,6 +213,12 @@ enum NotificationType {
   @@map("notification_type")
 }
 
+enum OAuthProvider {
+  GOOGLE
+
+  @@map("oauth_provider")
+}
+
 enum SecurityEventType {
   LOGIN_SUCCESS
   LOGIN_FAILED
@@ -264,7 +270,8 @@ enum Role {
 model User {
   id                    String    @id @default(uuid()) @db.Uuid
   email                 String    @unique @db.Citext
-  passwordHash          String    @map("password_hash")
+  // null = conta criada via login social, sem senha (definível por "Esqueci minha senha").
+  passwordHash          String?   @map("password_hash")
   name                  String    @db.VarChar(120)
   phone                 String?   @db.VarChar(32)
   avatarUrl             String?   @map("avatar_url")
@@ -292,6 +299,7 @@ model User {
   deletedAt             DateTime? @map("deleted_at") @db.Timestamptz(3)
 
   sessions               Session[]
+  oauthIdentities        OAuthIdentity[]
   verificationTokens     VerificationToken[]
   accounts               Account[]
   creditCards            CreditCard[]
@@ -317,6 +325,22 @@ model User {
 
   @@index([deletedAt])
   @@map("users")
+}
+
+/// Vínculo com um provedor de login social (o `sub` do Google identifica a pessoa, não o e-mail).
+model OAuthIdentity {
+  id             String        @id @default(uuid()) @db.Uuid
+  userId         String        @map("user_id") @db.Uuid
+  provider       OAuthProvider
+  providerUserId String        @map("provider_user_id") @db.VarChar(255)
+  email          String        @db.Citext
+  createdAt      DateTime      @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerUserId])
+  @@index([userId])
+  @@map("oauth_identities")
 }
 
 model Session {

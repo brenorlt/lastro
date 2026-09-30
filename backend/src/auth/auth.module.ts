@@ -3,6 +3,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { AuthCleanupService } from './auth-cleanup.service.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
+import { GoogleAuthController } from './oauth/google-auth.controller.js';
+import { GoogleOAuthService } from './oauth/google-oauth.service.js';
 import { PasswordService } from './password/password.service.js';
 import { SecurityEventsService } from './security/security-events.service.js';
 import { TrustedOriginGuard } from './security/trusted-origin.guard.js';
@@ -13,11 +15,12 @@ import { AccessTokenService } from './tokens/access-token.service.js';
 @Global()
 @Module({
   imports: [JwtModule.register({})],
-  controllers: [AuthController],
+  controllers: [AuthController, GoogleAuthController],
   providers: [
     AuthService,
     AuthCleanupService,
     AccessTokenService,
+    GoogleOAuthService,
     PasswordService,
     SecurityEventsService,
     SessionService,
