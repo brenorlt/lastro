@@ -2,7 +2,7 @@ import { SECURITY_POINTS } from "../data";
 
 export function SecuritySection() {
   return (
-    <section id="seguranca" className="scroll-mt-20 border-y border-line py-20 sm:py-28">
+    <section id="seguranca" data-section="seguranca" className="scroll-mt-20 border-y border-line py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="grid gap-12 lg:grid-cols-[1fr_1.3fr] lg:items-center">
           <div>

@@ -4,9 +4,19 @@ import { Logo } from "@/components/brand/logo";
 const CONTACT_EMAIL = "brenotolentino.dev@gmail.com";
 const CNPJ = "54.798.718/0001-02";
 
-const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
-  { title: "Produto", links: [{ label: "Como funciona", href: "/#como-funciona" }, { label: "Segurança", href: "/#seguranca" }, { label: "Planos", href: "/#planos" }] },
-  { title: "Conta", links: [{ label: "Entrar", href: "/entrar" }, { label: "Criar conta", href: "/cadastro" }] },
+/** cta / nav viram data-cta / data-nav para o analytics da landing. */
+type FooterLink = { label: string; href: string; cta?: string; nav?: string };
+
+const COLUMNS: { title: string; links: FooterLink[] }[] = [
+  {
+    title: "Produto",
+    links: [
+      { label: "Como funciona", href: "/#como-funciona", nav: "rodape" },
+      { label: "Segurança", href: "/#seguranca", nav: "rodape" },
+      { label: "Planos", href: "/#planos", nav: "rodape" },
+    ],
+  },
+  { title: "Conta", links: [{ label: "Entrar", href: "/entrar" }, { label: "Testar grátis", href: "/cadastro", cta: "rodape" }] },
   { title: "Legal", links: [{ label: "Termos de uso", href: "/termos" }, { label: "Política de privacidade", href: "/privacidade" }] },
   { title: "Contato", links: [{ label: CONTACT_EMAIL, href: `mailto:${CONTACT_EMAIL}` }] },
 ];
@@ -26,7 +36,9 @@ export function MarketingFooter() {
               <ul className="mt-4 space-y-2.5">
                 {c.links.map((l) => (
                   <li key={l.label}>
-                    <Link href={l.href} className="text-sm text-ink-2 hover:text-ink">{l.label}</Link>
+                    <Link href={l.href} data-cta={l.cta} data-nav={l.nav} className="text-sm text-ink-2 hover:text-ink">
+                      {l.label}
+                    </Link>
                   </li>
                 ))}
               </ul>

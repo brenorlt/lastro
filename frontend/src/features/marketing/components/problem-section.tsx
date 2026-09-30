@@ -12,7 +12,7 @@ const PROBLEMS: { icon: LucideIcon; title: string; description: string }[] = [
 
 export function ProblemSection() {
   return (
-    <section id="problema" className="scroll-mt-20 py-20 sm:py-28">
+    <section id="problema" data-section="problema" className="scroll-mt-20 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">O problema</p>

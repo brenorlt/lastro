@@ -36,3 +36,77 @@ describe("actionEventFor", () => {
     expect(actionEventFor("POST", `/notifications/${id}/read`)).toBeNull();
   });
 });
+
+describe("envio com consentimento", () => {
+  // GA_MEASUREMENT_ID é lido no import: cada teste carrega o módulo de novo com o id definido.
+  async function load() {
+    vi.stubEnv("NEXT_PUBLIC_GA_MEASUREMENT_ID", "G-TESTE");
+    vi.resetModules();
+    return import("../analytics");
+  }
+
+  beforeEach(() => {
+    window.localStorage.clear();
+    window.sessionStorage.clear();
+    delete window.gtag;
+  });
+  afterEach(() => {
+    vi.unstubAllEnvs();
+    delete window.gtag;
+  });
+
+  it("guarda eventos até o gtag existir e envia na ordem depois do aceite", async () => {
+    const analytics = await load();
+    analytics.track("section_view", { section: "hero" });
+    analytics.track("cta_click", { cta_location: "hero" });
+
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    analytics.saveConsent("granted");
+    analytics.flushPendingEvents();
+
+    expect(gtag.mock.calls).toEqual([
+      ["event", "section_view", { section: "hero" }],
+      ["event", "cta_click", { cta_location: "hero" }],
+    ]);
+    analytics.flushPendingEvents();
+    expect(gtag).toHaveBeenCalledTimes(2);
+  });
+
+  it("descarta a fila quando a pessoa recusa e não guarda mais nada", async () => {
+    const analytics = await load();
+    analytics.track("section_view", { section: "hero" });
+    analytics.saveConsent("denied");
+    analytics.track("section_view", { section: "planos" });
+
+    const gtag = vi.fn();
+    window.gtag = gtag;
+    analytics.flushPendingEvents();
+    expect(gtag).not.toHaveBeenCalled();
+  });
+
+  it("atribui o sign_up ao CTA clicado na landing, uma vez só", async () => {
+    const analytics = await load();
+    const gtag = vi.fn();
+    window.gtag = gtag;
+
+    analytics.rememberSignupCta("planos");
+    analytics.trackApiAction("POST", "/auth/register");
+    analytics.trackApiAction("POST", "/auth/register");
+
+    expect(gtag.mock.calls.map((c) => c[2])).toEqual([
+      { method: "password", route: "/auth/register", cta_location: "planos" },
+      { method: "password", route: "/auth/register", cta_location: "direto" },
+    ]);
+  });
+
+  it("sign_up do Google usa o mesmo CTA guardado", async () => {
+    const analytics = await load();
+    const gtag = vi.fn();
+    window.gtag = gtag;
+
+    analytics.rememberSignupCta("hero");
+    analytics.trackGoogleSignUp();
+    expect(gtag).toHaveBeenCalledWith("event", "sign_up", { method: "google", cta_location: "hero" });
+  });
+});

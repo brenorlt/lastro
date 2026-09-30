@@ -7,6 +7,7 @@ import { useEffect, useRef, useSyncExternalStore } from "react";
 import { Button } from "@/components/ui/button";
 import {
   type Consent,
+  flushPendingEvents,
   GA_MEASUREMENT_ID,
   readConsent,
   saveConsent,
@@ -60,6 +61,12 @@ function UserId() {
   return null;
 }
 
+/** Renderizado depois dos <Script>: o efeito roda quando o window.gtag do ga-init já existe. */
+function PendingEvents() {
+  useEffect(() => flushPendingEvents(), []);
+  return null;
+}
+
 function ConsentBanner() {
   return (
     <div
@@ -106,6 +113,7 @@ gtag('config','${GA_MEASUREMENT_ID}',{send_page_view:false,allow_google_signals:
       </Script>
       <PageViews />
       <UserId />
+      <PendingEvents />
     </>
   );
 }

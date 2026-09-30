@@ -31,6 +31,7 @@ export function readConsent(): Consent | null {
 }
 
 export function saveConsent(consent: Consent | null) {
+  if (consent !== "granted") pending.length = 0;
   try {
     if (consent) window.localStorage.setItem(CONSENT_KEY, consent);
     else window.localStorage.removeItem(CONSENT_KEY);
@@ -79,8 +80,53 @@ export function trackPageView(path: string) {
   });
 }
 
-export function track(event: string, params: Record<string, string | number | boolean> = {}) {
-  gtag("event", event, params);
+type Params = Record<string, string | number | boolean>;
+
+/**
+ * Eventos disparados antes do gtag existir (banner ainda sem resposta, ou script carregando).
+ * Ficam só em memória, nada sai do navegador: vão para o Google se a pessoa aceitar e são
+ * descartados se recusar. Sem isso, a primeira seção vista e o clique que levou ao cadastro se perdem.
+ */
+const pending: [string, Params][] = [];
+const MAX_PENDING = 50;
+
+export function track(event: string, params: Params = {}) {
+  if (typeof window === "undefined" || !GA_MEASUREMENT_ID) return;
+  if (window.gtag) return window.gtag("event", event, params);
+  if (readConsent() !== "denied" && pending.length < MAX_PENDING) pending.push([event, params]);
+}
+
+/** Chamado logo depois que o gtag é criado. */
+export function flushPendingEvents() {
+  for (const [event, params] of pending.splice(0)) gtag("event", event, params);
+}
+
+// ───────────────────────── Origem do cadastro ─────────────────────────
+
+const SIGNUP_CTA_KEY = "lastro_signup_cta";
+
+/** Qual botão da landing levou ao /cadastro — vira o cta_location do sign_up. */
+export function rememberSignupCta(location: string) {
+  try {
+    window.sessionStorage.setItem(SIGNUP_CTA_KEY, location);
+  } catch {
+    // Armazenamento bloqueado: o sign_up sai como "direto".
+  }
+}
+
+function takeSignupCta(): string {
+  try {
+    const location = window.sessionStorage.getItem(SIGNUP_CTA_KEY);
+    window.sessionStorage.removeItem(SIGNUP_CTA_KEY);
+    return location || "direto";
+  } catch {
+    return "direto";
+  }
+}
+
+/** Cadastro via Google: o backend manda a conta nova para /onboarding?cadastro=google. */
+export function trackGoogleSignUp() {
+  track("sign_up", { method: "google", cta_location: takeSignupCta() });
 }
 
 /** id interno (UUID, não é dado pessoal) para juntar sessões do mesmo usuário; null no logout. */
@@ -147,5 +193,6 @@ export function actionEventFor(method: string, path: string): { event: string; p
 
 export function trackApiAction(method: string, path: string) {
   const action = actionEventFor(method, path);
-  if (action) track(action.event, action.params);
+  if (!action) return;
+  track(action.event, action.event === "sign_up" ? { ...action.params, cta_location: takeSignupCta() } : action.params);
 }

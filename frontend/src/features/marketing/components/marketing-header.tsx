@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
+import { SIGNUP_CTA } from "../data";
 
 const LINKS = [
   { href: "/#problema", label: "O problema" },
@@ -36,6 +37,7 @@ export function MarketingHeader() {
             <a
               key={l.href}
               href={l.href}
+              data-nav="header"
               className="text-ink-2 hover:bg-surface-sunken hover:text-ink rounded-md px-3 py-2 text-sm transition-colors"
             >
               {l.label}
@@ -46,20 +48,26 @@ export function MarketingHeader() {
           <Link href="/entrar" className={buttonVariants({ variant: "ghost" })}>
             Entrar
           </Link>
-          <Link href="/cadastro" className={buttonVariants({ variant: "secondary" })}>
-            Criar conta
+          <Link href="/cadastro" data-cta="header" className={buttonVariants()}>
+            Testar grátis
           </Link>
         </div>
-        <button
-          type="button"
-          onClick={() => setOpen((v) => !v)}
-          aria-expanded={open}
-          aria-controls="menu-principal-mobile"
-          aria-label={open ? "Fechar menu" : "Abrir menu"}
-          className="text-ink-2 hover:bg-surface-sunken flex size-10 items-center justify-center rounded-md lg:hidden"
-        >
-          {open ? <X aria-hidden /> : <Menu aria-hidden />}
-        </button>
+        {/* O header é sticky: no celular este é o único CTA sempre à vista durante a rolagem. */}
+        <div className="flex items-center gap-1 lg:hidden">
+          <Link href="/cadastro" data-cta="header-mobile" className={buttonVariants({ size: "sm" })}>
+            Testar grátis
+          </Link>
+          <button
+            type="button"
+            onClick={() => setOpen((v) => !v)}
+            aria-expanded={open}
+            aria-controls="menu-principal-mobile"
+            aria-label={open ? "Fechar menu" : "Abrir menu"}
+            className="text-ink-2 hover:bg-surface-sunken flex size-10 items-center justify-center rounded-md"
+          >
+            {open ? <X aria-hidden /> : <Menu aria-hidden />}
+          </button>
+        </div>
       </div>
       {/* grid-rows 0fr→1fr anima até a altura real do conteúdo, sem limite fixo que corte itens. */}
       <div
@@ -74,6 +82,7 @@ export function MarketingHeader() {
               <a
                 key={l.href}
                 href={l.href}
+                data-nav="menu-mobile"
                 onClick={() => setOpen(false)}
                 className="text-ink-2 hover:bg-surface-sunken hover:text-ink rounded-md px-3 py-2.5 text-sm"
               >
@@ -81,11 +90,11 @@ export function MarketingHeader() {
               </a>
             ))}
             <div className="border-line mt-2 flex flex-col gap-2 border-t pt-4">
+              <Link href="/cadastro" data-cta="menu-mobile" onClick={() => setOpen(false)} className={buttonVariants()}>
+                {SIGNUP_CTA}
+              </Link>
               <Link href="/entrar" onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
                 Entrar
-              </Link>
-              <Link href="/cadastro" onClick={() => setOpen(false)} className={buttonVariants()}>
-                Criar conta
               </Link>
             </div>
           </nav>

@@ -3,11 +3,11 @@ import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
-import { PLANS } from "../data";
+import { PLANS, SIGNUP_CTA, TRIAL_DAYS } from "../data";
 
 export function PricingSection() {
   return (
-    <section id="planos" className="scroll-mt-20 py-20 sm:py-28">
+    <section id="planos" data-section="planos" className="scroll-mt-20 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">Plano</p>
@@ -25,7 +25,7 @@ export function PricingSection() {
                 plan.featured && "relative ring-2 ring-accent shadow-lg",
               )}
             >
-              {plan.featured && <Badge tone="accent" className="absolute -top-3 left-7">Acesso completo</Badge>}
+              {plan.featured && <Badge tone="accent" className="absolute -top-3 left-7">{TRIAL_DAYS} dias grátis</Badge>}
               <h3 className="text-lg font-semibold text-ink">{plan.name}</h3>
               <p className="mt-1 text-sm text-ink-2">{plan.tagline}</p>
               <p className="mt-6 flex items-baseline gap-1">
@@ -33,9 +33,15 @@ export function PricingSection() {
                 <span className="num font-display text-4xl tracking-tight text-ink">{plan.monthlyPrice}</span>
                 <span className="text-sm text-ink-3">/mês</span>
               </p>
-              <Link href="/cadastro" className={buttonVariants({ variant: plan.featured ? "primary" : "secondary", className: "mt-6 w-full" })}>
-                Começar com {plan.name}
+              <p className="mt-1 text-sm text-ink-2">depois de {TRIAL_DAYS} dias grátis com tudo liberado</p>
+              <Link
+                href="/cadastro"
+                data-cta="planos"
+                className={buttonVariants({ size: "lg", variant: plan.featured ? "primary" : "secondary", className: "mt-6 w-full" })}
+              >
+                {SIGNUP_CTA}
               </Link>
+              <p className="mt-3 text-center text-xs text-ink-3">Sem cartão de crédito para começar. Nada é cobrado se você não assinar.</p>
               <ul className="mt-7 space-y-3 border-t border-line pt-7">
                 {plan.features.map((f) => (
                   <li key={f} className="flex items-start gap-2.5 text-sm text-ink-2">

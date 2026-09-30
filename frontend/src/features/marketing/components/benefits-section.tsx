@@ -12,7 +12,7 @@ const BENEFITS: { icon: LucideIcon; title: string; description: string }[] = [
 
 export function BenefitsSection() {
   return (
-    <section className="py-20 sm:py-28">
+    <section data-section="beneficios" className="py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">Benefícios</p>

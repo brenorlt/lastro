@@ -9,7 +9,7 @@ const PAIRS = [
 
 export function TransformationSection() {
   return (
-    <section className="border-y border-line bg-surface-sunken/40 py-20 sm:py-28">
+    <section data-section="transformacao" className="border-y border-line bg-surface-sunken/40 py-20 sm:py-28">
       <div className="mx-auto max-w-5xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-brass">A transformação</p>

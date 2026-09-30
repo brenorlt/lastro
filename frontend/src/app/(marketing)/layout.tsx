@@ -1,4 +1,5 @@
 import type { ReactNode } from "react";
+import { MarketingAnalytics } from "@/features/marketing/components/marketing-analytics";
 import { MarketingFooter } from "@/features/marketing/components/marketing-footer";
 import { MarketingHeader } from "@/features/marketing/components/marketing-header";
 
@@ -16,6 +17,7 @@ export default function MarketingLayout({ children }: { children: ReactNode }) {
       <MarketingHeader />
       <main id="conteudo-principal" tabIndex={-1} className="flex-1">{children}</main>
       <MarketingFooter />
+      <MarketingAnalytics />
     </div>
   );
 }

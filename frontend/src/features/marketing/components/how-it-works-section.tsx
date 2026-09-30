@@ -2,6 +2,7 @@ import { ArrowRight, CheckCircle2, LayoutDashboard, WalletCards } from "lucide-r
 import type { LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { buttonVariants } from "@/components/ui/button";
+import { TRIAL_DAYS } from "../data";
 
 const STEPS: { icon: LucideIcon; title: string; description: string }[] = [
   {
@@ -12,7 +13,7 @@ const STEPS: { icon: LucideIcon; title: string; description: string }[] = [
   {
     icon: WalletCards,
     title: "Organize sua realidade",
-    description: "Cadastre contas, cartões, receitas, despesas e os objetivos que importam para você.",
+    description: "Cadastre contas e cartões, importe o extrato do banco em OFX ou CSV e defina os objetivos que importam para você.",
   },
   {
     icon: LayoutDashboard,
@@ -23,14 +24,14 @@ const STEPS: { icon: LucideIcon; title: string; description: string }[] = [
 
 export function HowItWorksSection() {
   return (
-    <section id="como-funciona" className="scroll-mt-20 border-y border-line bg-surface-sunken/40 py-20 sm:py-28">
+    <section id="como-funciona" data-section="como-funciona" className="scroll-mt-20 border-y border-line bg-surface-sunken/40 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mx-auto max-w-2xl text-center">
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-brass">Como funciona</p>
           <h2 className="mt-3 font-display text-3xl leading-tight tracking-[-0.02em] text-ink sm:text-4xl">
             Sua primeira visão financeira em três passos.
           </h2>
-          <p className="mt-4 text-ink-2">Sem importar extratos, sem conectar o banco e sem precisar aprender uma ferramenta complicada.</p>
+          <p className="mt-4 text-ink-2">Sem conectar o banco e sem precisar aprender uma ferramenta complicada.</p>
         </div>
 
         <ol className="mx-auto mt-14 grid max-w-5xl gap-5 md:grid-cols-3">
@@ -47,9 +48,10 @@ export function HowItWorksSection() {
         </ol>
 
         <div className="mt-10 text-center">
-          <Link href="/cadastro" className={buttonVariants({ variant: "secondary" })}>
+          <Link href="/cadastro" data-cta="como-funciona" className={buttonVariants({ size: "lg" })}>
             Montar minha visão financeira <ArrowRight aria-hidden />
           </Link>
+          <p className="mt-3 text-xs text-ink-3">Grátis por {TRIAL_DAYS} dias, sem cartão de crédito.</p>
         </div>
       </div>
     </section>
