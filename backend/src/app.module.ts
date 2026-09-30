@@ -28,6 +28,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module.js';
 import { EmergencyFundModule } from './modules/emergency-fund/emergency-fund.module.js';
 import { GoalsModule } from './modules/goals/goals.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
+import { ImportsModule } from './modules/imports/imports.module.js';
 import { HealthModule } from './modules/health/health.module.js';
 import { MailModule } from './modules/mail/mail.module.js';
 import { MarketModule } from './modules/market/market.module.js';
@@ -60,6 +61,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module.j
     CategoriesModule,
     TagsModule,
     TransactionsModule,
+    ImportsModule,
     CardsModule,
     SearchModule,
     NotificationsModule,

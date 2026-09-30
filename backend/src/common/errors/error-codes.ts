@@ -70,6 +70,8 @@ export const ErrorCode = {
   INVESTMENT_TX_NOT_FOUND: 'INVESTMENT_TX_NOT_FOUND',
   PAYMENT_EXCEEDS_BALANCE: 'PAYMENT_EXCEEDS_BALANCE',
   LINKED_TRANSACTION: 'LINKED_TRANSACTION',
+  IMPORT_UNREADABLE: 'IMPORT_UNREADABLE',
+  IMPORT_EMPTY: 'IMPORT_EMPTY',
 
   // Cobrança
   SUBSCRIPTION_REQUIRED: 'SUBSCRIPTION_REQUIRED',
@@ -238,6 +240,15 @@ export const ERROR_DEFINITIONS: Record<ErrorCode, ErrorDefinition> = {
     status: HttpStatus.BAD_REQUEST,
     message:
       'Este lançamento foi gerado por um investimento ou pagamento de dívida: altere-o por lá',
+  },
+  IMPORT_UNREADABLE: {
+    status: HttpStatus.BAD_REQUEST,
+    message:
+      'Não conseguimos ler este extrato. Envie um arquivo OFX ou CSV exportado pelo seu banco',
+  },
+  IMPORT_EMPTY: {
+    status: HttpStatus.BAD_REQUEST,
+    message: 'Nenhum lançamento encontrado no arquivo',
   },
 
   SUBSCRIPTION_REQUIRED: {

@@ -48,6 +48,16 @@ type Db = Tx | PrismaService;
 type ApiStatus = 'CLEARED' | 'PENDING';
 export type CardRef = CardCycle & { id: string; userId: string };
 
+/** Linha de extrato revisada pelo usuário, pronta para virar lançamento. */
+export interface ImportRowInput {
+  externalId: string;
+  type: 'INCOME' | 'EXPENSE';
+  amount: string;
+  description: string;
+  date: DateOnly;
+  categoryId?: string | null;
+}
+
 const FUTURE_CLEARED_MESSAGE = 'Lançamentos futuros ficam como pendentes';
 
 function validation(field: string, message: string): AppException {
@@ -280,6 +290,91 @@ export class TransactionsService {
     const created = await this.withBudgetAlerts(userId, await this.fetchMany(ids));
     await this.notifyNew(userId, created[0], created.length);
     return created;
+  }
+
+  /**
+   * Grava linhas de extrato já revisadas numa única transação, com as mesmas regras de saldo e
+   * fatura do lançamento manual. Linhas cujo `externalId` já está ativo (reenvio, duplo clique)
+   * são ignoradas e contadas em `skipped`.
+   */
+  async importRows(
+    userId: string,
+    target: { accountId?: string | null; creditCardId?: string | null },
+    rows: ImportRowInput[],
+  ): Promise<{ created: number; skipped: number }> {
+    const today = await this.userToday(userId);
+    const { accountId, card } = await this.resolveSource(
+      userId,
+      'EXPENSE',
+      target.accountId,
+      target.creditCardId,
+    );
+    if (card && rows.some((r) => r.type === 'INCOME')) {
+      throw validation('rows', 'Receitas não podem ser lançadas no cartão');
+    }
+
+    const categoryIds = [
+      ...new Set(rows.map((r) => r.categoryId).filter((id): id is string => !!id)),
+    ];
+    const categories = new Map(
+      (
+        await this.prisma.category.findMany({
+          where: { id: { in: categoryIds }, userId, deletedAt: null },
+          select: { id: true, type: true },
+        })
+      ).map((c) => [c.id, c.type]),
+    );
+    for (const row of rows) {
+      if (!row.categoryId) continue;
+      const type = categories.get(row.categoryId);
+      if (!type) throw new AppException(ErrorCode.CATEGORY_NOT_FOUND);
+      if (type !== row.type) throw new AppException(ErrorCode.CATEGORY_TYPE_MISMATCH);
+    }
+
+    const active = new Set(
+      (
+        await this.prisma.transaction.findMany({
+          where: { userId, deletedAt: null, externalId: { in: rows.map((r) => r.externalId) } },
+          select: { externalId: true },
+        })
+      ).map((t) => t.externalId),
+    );
+    const fresh = rows.filter((r) => {
+      if (active.has(r.externalId)) return false;
+      active.add(r.externalId);
+      return true;
+    });
+
+    await this.prisma.$transaction(
+      async (tx) => {
+        for (const row of fresh) {
+          await this.insertRow(tx, {
+            userId,
+            type: row.type,
+            amount: toDecimal(row.amount),
+            description: row.description,
+            notes: null,
+            searchText: transactionSearchText(row.description, null),
+            date: row.date,
+            status: resolveStatus(undefined, row.date, today),
+            accountId,
+            creditCardId: card?.id ?? null,
+            card,
+            categoryId: row.categoryId ?? null,
+            externalId: row.externalId,
+            tagIds: [],
+          });
+        }
+      },
+      // Um extrato de vários meses passa de mil consultas; o padrão de 5 s não basta.
+      { timeout: 60_000 },
+    );
+
+    const months = [
+      ...new Set(fresh.filter((r) => r.type === 'EXPENSE').map((r) => r.date.slice(0, 7))),
+    ];
+    if (months.length) await this.budgets.evaluateAlerts(userId, months);
+    return { created: fresh.length, skipped: rows.length - fresh.length };
   }
 
   async createTransfer(userId: string, dto: CreateTransferDto): Promise<TransactionDto> {
@@ -679,6 +774,7 @@ export class TransactionsService {
       installmentGroupId?: string;
       installmentNumber?: number;
       installmentTotal?: number;
+      externalId?: string | null;
       tagIds: string[];
     },
   ): Promise<string> {

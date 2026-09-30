@@ -580,6 +580,8 @@ model Transaction {
   installmentNumber      Int?              @map("installment_number") @db.SmallInt
   installmentTotal       Int?              @map("installment_total") @db.SmallInt
   recurringTransactionId String?           @map("recurring_transaction_id") @db.Uuid
+  // Impressão digital da linha do extrato importado (sha256 hex): impede importar a mesma linha duas vezes.
+  externalId             String?           @map("external_id") @db.VarChar(64)
   // Descrição + notas normalizadas (minúsculas, sem acentos) mantidas pela aplicação,
   // para busca case/accent-insensitive com índice trigram.
   searchText             String            @default("") @map("search_text")
@@ -608,6 +610,7 @@ model Transaction {
   @@index([transferGroupId])
   @@index([installmentGroupId])
   @@index([recurringTransactionId])
+  @@unique([userId, externalId], map: "transactions_user_external_id_key", where: raw("external_id IS NOT NULL AND deleted_at IS NULL"))
   @@index([description(ops: raw("gin_trgm_ops"))], type: Gin, map: "transactions_description_trgm_idx")
   @@index([searchText(ops: raw("gin_trgm_ops"))], type: Gin, map: "transactions_search_text_trgm_idx")
   @@map("transactions")
