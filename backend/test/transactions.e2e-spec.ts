@@ -919,4 +919,363 @@ describe('Transactions (e2e)', () => {
     expect(data<Tx>(await s.client.get(`/api/transactions/${made[0]}`)).status).toBe('CLEARED');
     await assertInvariant(s.user.id);
   });
+
+  // Contrato do PATCH: o par { accountId, creditCardId: null } do POST não vale na edição.
+  it('PATCH com o corpo antigo do compositor (creditCardId: null) → 400 "Cartão inválido", nada muda', async () => {
+    const s = await setup('tx-edit-old-body');
+    const acc = await s.account('Principal', '500.00');
+    const [tx] = data<Tx[]>(
+      await s
+        .create({
+          type: 'EXPENSE',
+          amount: '86.66',
+          description: 'Mercado',
+          date: TODAY,
+          accountId: acc,
+        })
+        .expect(201),
+    );
+    expect(await s.balance(acc)).toBe('413.34');
+
+    const res = await s.client
+      .patch(`/api/transactions/${tx.id}?scope=single`)
+      .send({
+        amount: '86.65',
+        description: 'Mercado',
+        date: TODAY,
+        status: 'CLEARED',
+        accountId: acc,
+        creditCardId: null,
+        categoryId: null,
+        notes: null,
+        tags: [],
+      })
+      .expect(400);
+    expect(error(res).code).toBe('VALIDATION_ERROR');
+    expect(error(res).details).toEqual([
+      expect.objectContaining({ field: 'creditCardId', message: 'Cartão inválido' }),
+    ]);
+
+    const after = data<Tx>(await s.client.get(`/api/transactions/${tx.id}`).expect(200));
+    expect(after).toMatchObject({ amount: '86.66', account: { id: acc } });
+    expect(await s.balance(acc)).toBe('413.34');
+  });
+
+  // Preservação (3.4–3.8, 3.13): o contrato do PATCH em receitas/despesas em conta não muda.
+  describe('preservação do contrato do PATCH', () => {
+    let s: Awaited<ReturnType<typeof setup>>;
+    let acc: string;
+    let card: string;
+
+    beforeAll(async () => {
+      s = await setup('tx-edit-contract');
+      acc = await s.account('Principal', '500.00');
+      card = data<{ id: string }>(
+        await s.client
+          .post('/api/cards')
+          .send({
+            name: 'Cartão',
+            brand: 'VISA',
+            limit: '1000.00',
+            closingDay: 3,
+            dueDay: 10,
+            color: '#123456',
+          })
+          .expect(201),
+      ).id;
+    });
+
+    const expectField = (res: { body: unknown }, field: string, message: string): void => {
+      expect(error(res).code).toBe('VALIDATION_ERROR');
+      expect(error(res).details).toEqual([expect.objectContaining({ field, message })]);
+    };
+
+    it('despesa em conta: ids nulos/vazios/malformados, ambos, conta arquivada ou alheia, outro usuário → mesmos erros, nada muda', async () => {
+      const [tx] = data<Tx[]>(
+        await s
+          .create({
+            type: 'EXPENSE',
+            amount: '40.00',
+            description: 'Mercado',
+            date: TODAY,
+            accountId: acc,
+          })
+          .expect(201),
+      );
+      const balanceBefore = await s.balance(acc);
+      const archived = await s.account('Arquivada');
+      await s.client.post(`/api/accounts/${archived}/archive`).expect(200);
+      const other = await setup('tx-edit-contract-other');
+      const foreign = await other.account('Alheia');
+
+      const patch = (body: Record<string, unknown>) =>
+        s.client.patch(`/api/transactions/${tx.id}`).send({ amount: '41.00', ...body });
+
+      for (const bad of [null, '', 'abc']) {
+        expectField(await patch({ accountId: bad }).expect(400), 'accountId', 'Conta inválida');
+        expectField(
+          await patch({ creditCardId: bad }).expect(400),
+          'creditCardId',
+          'Cartão inválido',
+        );
+      }
+      expectField(
+        await patch({ accountId: acc, creditCardId: card }).expect(400),
+        'creditCardId',
+        'Informe conta OU cartão, não ambos',
+      );
+      expect(error(await patch({ accountId: foreign }).expect(404)).code).toBe('ACCOUNT_NOT_FOUND');
+      expect(error(await patch({ accountId: archived }).expect(400)).code).toBe('ACCOUNT_ARCHIVED');
+      expect(
+        error(
+          await other.client
+            .patch(`/api/transactions/${tx.id}`)
+            .send({ amount: '1.00' })
+            .expect(404),
+        ).code,
+      ).toBe('TRANSACTION_NOT_FOUND');
+
+      const after = data<Tx>(await s.client.get(`/api/transactions/${tx.id}`).expect(200));
+      expect(after).toMatchObject({ amount: '40.00', account: { id: acc } });
+      expect(await s.balance(acc)).toBe(balanceBefore);
+    });
+
+    it('receita: creditCardId → "Somente despesas podem ser lançadas no cartão", nada muda', async () => {
+      const [income] = data<Tx[]>(
+        await s
+          .create({
+            type: 'INCOME',
+            amount: '100.00',
+            description: 'Freela',
+            date: TODAY,
+            accountId: acc,
+          })
+          .expect(201),
+      );
+      const balanceBefore = await s.balance(acc);
+      expectField(
+        await s.client
+          .patch(`/api/transactions/${income.id}`)
+          .send({ creditCardId: card })
+          .expect(400),
+        'creditCardId',
+        'Somente despesas podem ser lançadas no cartão',
+      );
+      const after = data<Tx>(await s.client.get(`/api/transactions/${income.id}`).expect(200));
+      expect(after).toMatchObject({ type: 'INCOME', amount: '100.00', account: { id: acc } });
+      expect(await s.balance(acc)).toBe(balanceBefore);
+    });
+
+    it('lançamento vinculado a investimento: valor bloqueado (LINKED_TRANSACTION), textos e tags liberados', async () => {
+      const investment = data<{ id: string }>(
+        await s.client
+          .post('/api/investments')
+          .send({
+            name: 'Ações',
+            type: 'STOCKS',
+            quantity: '10',
+            averagePrice: '10',
+            currentValue: '100.00',
+            appliedAt: '2026-01-02',
+            liquidity: 'DAILY',
+          })
+          .expect(201),
+      ).id;
+      await s.client
+        .post(`/api/investments/${investment}/transactions`)
+        .send({ type: 'DIVIDEND', amount: '12.00', date: TODAY, accountId: acc })
+        .expect(201);
+      const { transactionId } = await ctx.prisma.investmentTransaction.findFirstOrThrow({
+        where: { investmentId: investment, type: 'DIVIDEND' },
+      });
+      const linkedId = transactionId ?? '';
+      const before = data<Tx>(await s.client.get(`/api/transactions/${linkedId}`).expect(200));
+      const balanceBefore = await s.balance(acc);
+
+      for (const body of [
+        { amount: '13.00' },
+        { date: addDays(TODAY, -1) },
+        { status: 'PENDING' },
+        { accountId: acc },
+      ]) {
+        expect(
+          error(await s.client.patch(`/api/transactions/${linkedId}`).send(body).expect(400)).code,
+        ).toBe('LINKED_TRANSACTION');
+      }
+
+      const [edited] = data<Tx[]>(
+        await s.client
+          .patch(`/api/transactions/${linkedId}`)
+          .send({ description: 'Dividendos ajustados', notes: 'jan', tags: ['renda'] })
+          .expect(200),
+      );
+      expect(edited).toMatchObject({
+        description: 'Dividendos ajustados',
+        notes: 'jan',
+        amount: before.amount,
+        date: before.date,
+        status: before.status,
+        account: { id: acc },
+      });
+      expect(edited.tags.map((t) => t.name)).toEqual(['renda']);
+      expect(await s.balance(acc)).toBe(balanceBefore);
+    });
+  });
+
+  // Correção (2.3, 2.4, 3.3, 3.10): corpos iguais aos que `toTransactionPatch` produz.
+  describe('PATCH com o corpo corrigido do compositor', () => {
+    let s: Awaited<ReturnType<typeof setup>>;
+
+    beforeAll(async () => {
+      s = await setup('tx-edit-fixed-body');
+    });
+
+    /** Corpo da edição a partir do lançamento atual; sem `accountId`/`creditCardId` se não houver troca. */
+    const editBody = (row: Tx, changes: Record<string, unknown> = {}) => ({
+      amount: row.amount,
+      description: row.description,
+      date: row.date,
+      status: row.status,
+      categoryId: row.category?.id ?? null,
+      notes: row.notes,
+      tags: row.tags.map((t) => t.name),
+      ...changes,
+    });
+    const money = (n: number) => n.toFixed(2);
+
+    it('despesa e receita avulsas em conta, só valor → 200, conta mantida, saldo ajustado', async () => {
+      const acc = await s.account('Avulsas', '500.00');
+      const [expense] = data<Tx[]>(
+        await s
+          .create({
+            type: 'EXPENSE',
+            amount: '86.66',
+            description: 'Mercado',
+            date: TODAY,
+            accountId: acc,
+          })
+          .expect(201),
+      );
+      const [income] = data<Tx[]>(
+        await s
+          .create({
+            type: 'INCOME',
+            amount: '100.00',
+            description: 'Freela',
+            date: TODAY,
+            accountId: acc,
+          })
+          .expect(201),
+      );
+      expect(await s.balance(acc)).toBe('513.34');
+
+      const [e] = data<Tx[]>(
+        await s.client
+          .patch(`/api/transactions/${expense.id}?scope=single`)
+          .send(editBody(expense, { amount: '86.65' }))
+          .expect(200),
+      );
+      expect(e).toMatchObject({ amount: '86.65', account: { id: acc }, creditCard: null });
+      expect(await s.balance(acc)).toBe('513.35');
+
+      const [i] = data<Tx[]>(
+        await s.client
+          .patch(`/api/transactions/${income.id}?scope=single`)
+          .send(editBody(income, { amount: '120.00' }))
+          .expect(200),
+      );
+      expect(i).toMatchObject({ amount: '120.00', account: { id: acc }, creditCard: null });
+      expect(await s.balance(acc)).toBe('533.35');
+      await assertInvariant(s.user.id);
+    });
+
+    it('despesa e receita recorrentes em conta, só valor (future/all) → 200, conta mantida, saldo das efetivadas ajustado', async () => {
+      const acc = await s.account('Séries', '1000.00');
+      const start = addMonthsClamped(TODAY, -1);
+      const series = async (type: 'INCOME' | 'EXPENSE', amount: string) =>
+        data<Tx[]>(
+          await s
+            .create({
+              type,
+              amount,
+              description: type === 'INCOME' ? 'Aluguel recebido' : 'Internet',
+              date: start,
+              accountId: acc,
+              repeat: { kind: 'RECURRING', frequency: 'MONTHLY' },
+            })
+            .expect(201),
+        );
+      const expenses = await series('EXPENSE', '50.00');
+      const incomes = await series('INCOME', '200.00');
+      expect(expenses.length).toBeGreaterThanOrEqual(3);
+      const cleared = (rows: Tx[]) => rows.filter((r) => r.status === 'CLEARED').length;
+      let expected = 1000 - 50 * cleared(expenses) + 200 * cleared(incomes);
+      expect(await s.balance(acc)).toBe(money(expected));
+
+      const future = data<Tx[]>(
+        await s.client
+          .patch(`/api/transactions/${expenses[1].id}?scope=future`)
+          .send(editBody(expenses[1], { amount: '60.00' }))
+          .expect(200),
+      );
+      expect(future).toHaveLength(expenses.length - 1);
+      for (const r of future) {
+        expect(r).toMatchObject({ amount: '60.00', account: { id: acc }, creditCard: null });
+      }
+      expected -= 10 * cleared(future);
+      expect(await s.balance(acc)).toBe(money(expected));
+
+      const all = data<Tx[]>(
+        await s.client
+          .patch(`/api/transactions/${incomes[2].id}?scope=all`)
+          .send(editBody(incomes[2], { amount: '210.00' }))
+          .expect(200),
+      );
+      expect(all).toHaveLength(incomes.length);
+      for (const r of all) {
+        expect(r).toMatchObject({ amount: '210.00', account: { id: acc }, creditCard: null });
+      }
+      expected += 10 * cleared(all);
+      expect(await s.balance(acc)).toBe(money(expected));
+
+      for (const rows of [expenses, incomes]) {
+        const { recurringTransactionId } = await ctx.prisma.transaction.findUniqueOrThrow({
+          where: { id: rows[0].id },
+        });
+        const tpl = await ctx.prisma.recurringTransaction.findUniqueOrThrow({
+          where: { id: recurringTransactionId ?? '' },
+        });
+        expect(tpl).toMatchObject({ accountId: acc, creditCardId: null });
+      }
+      await assertInvariant(s.user.id);
+    });
+
+    it('conta A → conta B com { accountId: B } → saldos de A e B ajustados', async () => {
+      const a = await s.account('Conta A', '500.00');
+      const b = await s.account('Conta B', '0.00');
+      const [tx] = data<Tx[]>(
+        await s
+          .create({
+            type: 'EXPENSE',
+            amount: '40.00',
+            description: 'Farmácia',
+            date: TODAY,
+            accountId: a,
+          })
+          .expect(201),
+      );
+      expect(await s.balance(a)).toBe('460.00');
+
+      const [moved] = data<Tx[]>(
+        await s.client
+          .patch(`/api/transactions/${tx.id}`)
+          .send(editBody(tx, { accountId: b }))
+          .expect(200),
+      );
+      expect(moved).toMatchObject({ account: { id: b }, creditCard: null });
+      expect(await s.balance(a)).toBe('500.00');
+      expect(await s.balance(b)).toBe('-40.00');
+      await assertInvariant(s.user.id);
+    });
+  });
 });

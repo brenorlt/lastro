@@ -1,5 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from '@jest/globals';
-import { addDays, todayIn } from '../src/common/utils/date-only.js';
+import { addDays, addMonthsClamped, todayIn } from '../src/common/utils/date-only.js';
 import { invoiceFor } from '../src/modules/cards/invoice.calc.js';
 import { type AuthedClient, type ErrorBody, quickUser } from './support/http.js';
 import { createTestApp, type TestContext } from './support/test-app.js';
@@ -485,5 +485,411 @@ describe('Cartões e faturas (e2e)', () => {
       .post(`/api/cards/${card}/invoices/2026-02/pay`)
       .send({ accountId: otherAccount })
       .expect(404);
+  });
+
+  // Contrato do PATCH: o par { accountId: null, creditCardId } do POST não vale na edição.
+  it('PATCH com o corpo antigo do compositor (accountId: null) numa parcelada → 400 "Conta inválida", nada muda', async () => {
+    const edit = data<Card>(
+      await client
+        .post('/api/cards')
+        .send({ name: 'Edição', brand: 'VISA', limit: '1000.00', ...CYCLE, color: '#123456' })
+        .expect(201),
+    ).id;
+    const rows = data<Tx[]>(
+      await purchase({
+        creditCardId: edit,
+        amount: '259.98',
+        date: '2026-01-15',
+        repeat: { kind: 'INSTALLMENTS', count: 3 },
+      }).expect(201),
+    );
+    expect(rows.map((r) => r.amount)).toEqual(['86.66', '86.66', '86.66']);
+    const balanceBefore = await balance();
+    const refs = rows.map((r) => r.invoice?.referenceMonth ?? '');
+
+    for (const scope of ['single', 'future', 'all']) {
+      const res = await client
+        .patch(`/api/transactions/${rows[0].id}?scope=${scope}`)
+        .send({
+          amount: '86.65',
+          description: 'Compra',
+          date: '2026-01-15',
+          status: rows[0].status,
+          accountId: null,
+          creditCardId: edit,
+          categoryId: food,
+          notes: null,
+          tags: [],
+        })
+        .expect(400);
+      expect(error(res).code).toBe('VALIDATION_ERROR');
+      expect(error(res).details).toEqual([
+        expect.objectContaining({ field: 'accountId', message: 'Conta inválida' }),
+      ]);
+    }
+
+    for (const [i, row] of rows.entries()) {
+      const after = data<Tx>(await client.get(`/api/transactions/${row.id}`).expect(200));
+      expect(after).toMatchObject({ amount: '86.66', account: null, creditCard: { id: edit } });
+      expect(after.invoice?.referenceMonth).toBe(refs[i]);
+    }
+    expect((await invoice(refs[0], edit)).total).toBe('86.66');
+    expect(await balance()).toBe(balanceBefore);
+  });
+
+  // Preservação (3.4–3.7): o contrato do PATCH numa compra no cartão não muda com o bugfix.
+  it('PATCH numa compra no cartão: ids nulos/vazios/malformados, ambos, cartão arquivado ou alheio → mesmos erros, nada muda', async () => {
+    const own = data<Card>(
+      await client
+        .post('/api/cards')
+        .send({ name: 'Contrato', brand: 'VISA', limit: '1000.00', ...CYCLE, color: '#654321' })
+        .expect(201),
+    ).id;
+    const archived = data<Card>(
+      await client
+        .post('/api/cards')
+        .send({
+          name: 'Contrato arquivado',
+          brand: 'ELO',
+          limit: '100.00',
+          ...CYCLE,
+          color: '#000000',
+        })
+        .expect(201),
+    ).id;
+    await client.post(`/api/cards/${archived}/archive`).expect(200);
+    const archivedAccount = data<{ id: string }>(
+      await client
+        .post('/api/accounts')
+        .send({
+          name: 'Contrato arquivada',
+          type: 'CHECKING',
+          initialBalance: '0',
+          color: '#111111',
+          icon: 'wallet',
+        })
+        .expect(201),
+    ).id;
+    await client.post(`/api/accounts/${archivedAccount}/archive`).expect(200);
+    const other = await quickUser(ctx, 'cards-contract-other');
+    const foreignCard = data<Card>(
+      await other.client
+        .post('/api/cards')
+        .send({ name: 'Alheio', brand: 'VISA', limit: '100.00', ...CYCLE, color: '#000000' })
+        .expect(201),
+    ).id;
+
+    const [tx] = data<Tx[]>(
+      await purchase({ creditCardId: own, amount: '40.00', date: '2026-01-20' }).expect(201),
+    );
+    const ref = tx.invoice?.referenceMonth ?? '';
+    expect((await invoice(ref, own)).total).toBe('40.00');
+    const balanceBefore = await balance();
+
+    const patch = (body: Record<string, unknown>) =>
+      client.patch(`/api/transactions/${tx.id}`).send({ amount: '41.00', ...body });
+    const expectField = async (body: Record<string, unknown>, field: string, message: string) => {
+      const res = await patch(body).expect(400);
+      expect(error(res).code).toBe('VALIDATION_ERROR');
+      expect(error(res).details).toEqual([expect.objectContaining({ field, message })]);
+    };
+
+    for (const bad of [null, '', 'abc']) {
+      await expectField({ accountId: bad }, 'accountId', 'Conta inválida');
+      await expectField({ creditCardId: bad }, 'creditCardId', 'Cartão inválido');
+    }
+    await expectField(
+      { accountId: account, creditCardId: own },
+      'creditCardId',
+      'Informe conta OU cartão, não ambos',
+    );
+    expect(error(await patch({ creditCardId: archived }).expect(400)).code).toBe(
+      'CARD_UNAVAILABLE',
+    );
+    expect(error(await patch({ creditCardId: foreignCard }).expect(404)).code).toBe(
+      'CARD_NOT_FOUND',
+    );
+    expect(error(await patch({ accountId: archivedAccount }).expect(400)).code).toBe(
+      'ACCOUNT_ARCHIVED',
+    );
+    // 3.13: outro usuário não edita a compra.
+    expect(
+      error(
+        await other.client.patch(`/api/transactions/${tx.id}`).send({ amount: '1.00' }).expect(404),
+      ).code,
+    ).toBe('TRANSACTION_NOT_FOUND');
+
+    const after = data<Tx>(await client.get(`/api/transactions/${tx.id}`).expect(200));
+    expect(after).toMatchObject({ amount: '40.00', account: null, creditCard: { id: own } });
+    expect(after.invoice?.referenceMonth).toBe(ref);
+    expect((await invoice(ref, own)).total).toBe('40.00');
+    expect(await balance()).toBe(balanceBefore);
+  });
+
+  // Correção (2.1–2.4, 3.1, 3.2, 3.10): corpos iguais aos que `toTransactionPatch` produz.
+  describe('PATCH com o corpo corrigido do compositor', () => {
+    const newCard = async (name: string) =>
+      data<Card>(
+        await client
+          .post('/api/cards')
+          .send({ name, brand: 'VISA', limit: '5000.00', ...CYCLE, color: '#0F766E' })
+          .expect(201),
+      ).id;
+    /** Corpo da edição sem troca de forma de pagamento (nem `accountId` nem `creditCardId`). */
+    const editBody = (row: Tx, changes: Record<string, unknown> = {}) => ({
+      amount: row.amount,
+      description: 'Compra',
+      date: row.date,
+      status: row.status,
+      categoryId: food,
+      notes: null,
+      tags: [],
+      ...changes,
+    });
+    const getTx = async (id: string) =>
+      data<Tx>(await client.get(`/api/transactions/${id}`).expect(200));
+    const template = (id: string) =>
+      ctx.prisma.recurringTransaction.findUniqueOrThrow({ where: { id } });
+    /** Total esperado por fatura: soma dos valores das linhas em cada mês de referência. */
+    const totalsByInvoice = (rows: Tx[]) => {
+      const totals = new Map<string, number>();
+      for (const r of rows) {
+        const ref = r.invoice?.referenceMonth ?? '';
+        totals.set(ref, (totals.get(ref) ?? 0) + Number(r.amount));
+      }
+      return totals;
+    };
+    const expectInvoiceTotals = async (rows: Tx[], cardId: string) => {
+      for (const [ref, total] of totalsByInvoice(rows)) {
+        expect([ref, (await invoice(ref, cardId)).total]).toEqual([ref, total.toFixed(2)]);
+      }
+    };
+
+    it('parcelada no cartão, só valor, scope single/future/all → 200, continua no cartão e na mesma fatura', async () => {
+      const own = await newCard('Corrigido parcelado');
+      const rows = data<Tx[]>(
+        await purchase({
+          creditCardId: own,
+          amount: '259.98',
+          date: '2026-01-15',
+          repeat: { kind: 'INSTALLMENTS', count: 3 },
+        }).expect(201),
+      );
+      const refs = rows.map((r) => r.invoice?.referenceMonth ?? '');
+      const balanceBefore = await balance();
+
+      const edits: [number, string, string, number][] = [
+        [0, 'single', '86.65', 1],
+        [1, 'future', '86.64', 2],
+        [2, 'all', '86.63', 3],
+      ];
+      for (const [i, scope, amount, affected] of edits) {
+        const res = data<Tx[]>(
+          await client
+            .patch(`/api/transactions/${rows[i].id}?scope=${scope}`)
+            .send(editBody(rows[i], { amount }))
+            .expect(200),
+        );
+        expect(res).toHaveLength(affected);
+      }
+
+      // Parcelas não propagam valor: cada uma ficou com o valor da sua própria edição.
+      const amounts = ['86.65', '86.64', '86.63'];
+      for (const [i, row] of rows.entries()) {
+        const after = await getTx(row.id);
+        expect(after).toMatchObject({
+          amount: amounts[i],
+          account: null,
+          creditCard: { id: own },
+          installment: { number: i + 1 },
+        });
+        expect(after.invoice?.referenceMonth).toBe(refs[i]);
+        expect((await invoice(refs[i], own)).total).toBe(amounts[i]);
+      }
+      expect(await balance()).toBe(balanceBefore);
+    });
+
+    it('recorrente no cartão, só valor, scope future/all → valor propaga, continua no cartão, modelo mantém creditCardId', async () => {
+      const own = await newCard('Corrigido recorrente');
+      const rows = data<Tx[]>(
+        await purchase({
+          creditCardId: own,
+          amount: '50.00',
+          date: addMonthsClamped(TODAY, -1),
+          repeat: { kind: 'RECURRING', frequency: 'MONTHLY' },
+        }).expect(201),
+      );
+      expect(rows.length).toBeGreaterThanOrEqual(3);
+      const { recurringTransactionId } = await ctx.prisma.transaction.findUniqueOrThrow({
+        where: { id: rows[0].id },
+      });
+      const templateId = recurringTransactionId ?? '';
+      const refs = new Map(rows.map((r) => [r.id, r.invoice?.referenceMonth]));
+      const balanceBefore = await balance();
+
+      const future = data<Tx[]>(
+        await client
+          .patch(`/api/transactions/${rows[1].id}?scope=future`)
+          .send(editBody(rows[1], { amount: '60.00' }))
+          .expect(200),
+      );
+      expect(future.map((r) => r.id).sort()).toEqual(
+        rows
+          .slice(1)
+          .map((r) => r.id)
+          .sort(),
+      );
+      expect((await getTx(rows[0].id)).amount).toBe('50.00');
+      expect(future.every((r) => r.amount === '60.00')).toBe(true);
+      expect(await template(templateId)).toMatchObject({ creditCardId: own, accountId: null });
+      expect((await template(templateId)).amount.toFixed(2)).toBe('60.00');
+
+      const all = data<Tx[]>(
+        await client
+          .patch(`/api/transactions/${rows[2].id}?scope=all`)
+          .send(editBody(rows[2], { amount: '70.00' }))
+          .expect(200),
+      );
+      expect(all).toHaveLength(rows.length);
+      for (const r of all) {
+        expect(r).toMatchObject({ amount: '70.00', account: null, creditCard: { id: own } });
+        expect(r.invoice?.referenceMonth).toBe(refs.get(r.id));
+      }
+      const tpl = await template(templateId);
+      expect(tpl).toMatchObject({ creditCardId: own, accountId: null });
+      expect(tpl.amount.toFixed(2)).toBe('70.00');
+      await expectInvoiceTotals(all, own);
+      expect(await balance()).toBe(balanceBefore);
+    });
+
+    it('troca conta ↔ cartão: { creditCardId } vai para a fatura e devolve o saldo; { accountId } volta e debita', async () => {
+      const own = await newCard('Corrigido troca');
+      const acc = data<{ id: string }>(
+        await client
+          .post('/api/accounts')
+          .send({
+            name: 'Corrigido troca',
+            type: 'CHECKING',
+            initialBalance: '500.00',
+            color: '#111111',
+            icon: 'wallet',
+          })
+          .expect(201),
+      ).id;
+      const accBalance = async () =>
+        data<{ currentBalance: string }>(await client.get(`/api/accounts/${acc}`).expect(200))
+          .currentBalance;
+      const date = addDays(TODAY, -3);
+      const ref = invoiceFor(CYCLE, date);
+      const [tx] = data<Tx[]>(
+        await client
+          .post('/api/transactions')
+          .send({
+            type: 'EXPENSE',
+            amount: '30.00',
+            description: 'Compra',
+            date,
+            accountId: acc,
+            categoryId: food,
+          })
+          .expect(201),
+      );
+      expect(tx.status).toBe('CLEARED');
+      expect(await accBalance()).toBe('470.00');
+
+      const [onCard] = data<Tx[]>(
+        await client
+          .patch(`/api/transactions/${tx.id}`)
+          .send(editBody(tx, { creditCardId: own }))
+          .expect(200),
+      );
+      expect(onCard).toMatchObject({ account: null, creditCard: { id: own } });
+      expect(onCard.invoice?.referenceMonth).toBe(ref);
+      expect((await invoice(ref, own)).total).toBe('30.00');
+      expect(await accBalance()).toBe('500.00');
+
+      const [onAccount] = data<Tx[]>(
+        await client
+          .patch(`/api/transactions/${tx.id}`)
+          .send(editBody(onCard, { status: 'CLEARED', accountId: acc }))
+          .expect(200),
+      );
+      expect(onAccount).toMatchObject({ account: { id: acc }, creditCard: null, invoice: null });
+      expect((await invoice(ref, own)).total).toBe('0.00');
+      expect(await accBalance()).toBe('470.00');
+    });
+
+    it('troca conta ↔ cartão numa série com scope=all vale para todos os membros e para o modelo', async () => {
+      const own = await newCard('Corrigido troca série');
+      const acc = data<{ id: string }>(
+        await client
+          .post('/api/accounts')
+          .send({
+            name: 'Corrigido troca série',
+            type: 'CHECKING',
+            initialBalance: '500.00',
+            color: '#111111',
+            icon: 'wallet',
+          })
+          .expect(201),
+      ).id;
+      const accBalance = async () =>
+        data<{ currentBalance: string }>(await client.get(`/api/accounts/${acc}`).expect(200))
+          .currentBalance;
+      const rows = data<Tx[]>(
+        await client
+          .post('/api/transactions')
+          .send({
+            type: 'EXPENSE',
+            amount: '25.00',
+            description: 'Compra',
+            date: addMonthsClamped(TODAY, -1),
+            accountId: acc,
+            categoryId: food,
+            repeat: { kind: 'RECURRING', frequency: 'MONTHLY' },
+          })
+          .expect(201),
+      );
+      expect(rows.length).toBeGreaterThanOrEqual(3);
+      const cleared = rows.filter((r) => r.status === 'CLEARED').length;
+      const debited = (500 - 25 * cleared).toFixed(2);
+      expect(await accBalance()).toBe(debited);
+      const { recurringTransactionId } = await ctx.prisma.transaction.findUniqueOrThrow({
+        where: { id: rows[0].id },
+      });
+      const templateId = recurringTransactionId ?? '';
+
+      const toCard = data<Tx[]>(
+        await client
+          .patch(`/api/transactions/${rows[1].id}?scope=all`)
+          .send(editBody(rows[1], { creditCardId: own }))
+          .expect(200),
+      );
+      expect(toCard).toHaveLength(rows.length);
+      for (const r of toCard) {
+        expect(r).toMatchObject({ account: null, creditCard: { id: own } });
+        expect(r.invoice?.referenceMonth).toBe(invoiceFor(CYCLE, r.date));
+      }
+      expect(await template(templateId)).toMatchObject({ creditCardId: own, accountId: null });
+      await expectInvoiceTotals(toCard, own);
+      expect(await accBalance()).toBe('500.00');
+
+      const edited = toCard.find((r) => r.id === rows[1].id) ?? toCard[0];
+      const toAccount = data<Tx[]>(
+        await client
+          .patch(`/api/transactions/${rows[1].id}?scope=all`)
+          .send(editBody(edited, { status: rows[1].status, accountId: acc }))
+          .expect(200),
+      );
+      expect(toAccount).toHaveLength(rows.length);
+      for (const r of toAccount) {
+        expect(r).toMatchObject({ account: { id: acc }, creditCard: null, invoice: null });
+      }
+      expect(await template(templateId)).toMatchObject({ accountId: acc, creditCardId: null });
+      for (const ref of totalsByInvoice(toCard).keys()) {
+        expect((await invoice(ref, own)).total).toBe('0.00');
+      }
+      expect(await accBalance()).toBe(debited);
+    });
   });
 });
