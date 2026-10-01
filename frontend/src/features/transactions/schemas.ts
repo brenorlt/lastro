@@ -1,7 +1,7 @@
 import { z } from "zod";
 import { moneyString } from "@/features/accounts/schemas";
 import type { ComposerMode } from "@/stores/composer-store";
-import type { RepeatInput, Transaction, TransactionInput, TransferInput } from "@/types/finance";
+import type { EditInput, RepeatInput, Transaction, TransactionInput, TransferInput } from "@/types/finance";
 
 export const composerSchema = z
   .object({
@@ -106,6 +106,30 @@ export function toTransactionInput(v: ComposerValues): TransactionInput {
     tags: v.tags,
     repeat: repeatOf(v),
   };
+}
+
+/** Corpo do PATCH de edição do lançamento `editing`. */
+export function toTransactionPatch(v: ComposerValues, editing: Transaction): EditInput {
+  const base = toTransactionInput(v);
+  if (editing.type === "TRANSFER") {
+    return { amount: v.amount, date: v.date, description: v.description.trim() || "Transferência", status: base.status, notes: base.notes, fromAccountId: v.accountId!, toAccountId: v.toAccountId! };
+  }
+  return { amount: base.amount, description: base.description, date: base.date, status: base.status, ...paymentPatch(v, editing), categoryId: base.categoryId, notes: base.notes, tags: base.tags };
+}
+
+/**
+ * Forma de pagamento do PATCH: só o campo de destino, e só quando muda em relação a `editing`.
+ * A API lê "presente" como "trocar para" (e zera o outro lado), então nunca manda os dois nem `null`.
+ */
+function paymentPatch(v: ComposerValues, editing: Transaction): Pick<EditInput, "accountId" | "creditCardId"> {
+  const currentAccount = editing.account?.id ?? null;
+  const currentCard = editing.creditCard?.id ?? null;
+  if (v.mode === "EXPENSE" && v.creditCardId) {
+    return v.creditCardId !== currentCard ? { creditCardId: v.creditCardId } : {};
+  }
+  // Receita ou despesa em conta: o schema garante accountId preenchido aqui.
+  const accountId = v.accountId!;
+  return accountId !== currentAccount || currentCard !== null ? { accountId } : {};
 }
 
 export function toTransferInput(v: ComposerValues): TransferInput {

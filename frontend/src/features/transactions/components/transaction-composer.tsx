@@ -20,7 +20,7 @@ import { ApiError } from "@/services/api-error";
 import { useComposer, type ComposerMode } from "@/stores/composer-store";
 import type { SeriesScope } from "@/types/finance";
 import { isSeries, useCreateTransaction, useCreateTransfer, useTags, useUpdateTransaction } from "../api";
-import { composerSchema, emptyComposer, fromTransaction, toTransactionInput, toTransferInput, type ComposerValues } from "../schemas";
+import { composerSchema, emptyComposer, fromTransaction, toTransactionInput, toTransactionPatch, toTransferInput, type ComposerValues } from "../schemas";
 import { AccountSelect, CategorySelect, PaymentSourceSelect } from "./entity-selects";
 import { ScopeDialog } from "./scope-dialog";
 
@@ -89,11 +89,7 @@ function ComposerBody() {
 
   const submitEdit = async (values: ComposerValues, scope: SeriesScope) => {
     if (!editing) return;
-    const base = toTransactionInput(values);
-    const input =
-      editing.type === "TRANSFER"
-        ? { amount: values.amount, date: values.date, description: values.description.trim() || "Transferência", status: base.status, notes: base.notes, fromAccountId: values.accountId!, toAccountId: values.toAccountId! }
-        : { amount: base.amount, description: base.description, date: base.date, status: base.status, accountId: base.accountId, creditCardId: base.creditCardId, categoryId: base.categoryId, notes: base.notes, tags: base.tags };
+    const input = toTransactionPatch(values, editing);
     await update.mutateAsync({ id: editing.id, input, scope });
     close();
   };

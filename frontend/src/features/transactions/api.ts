@@ -5,6 +5,7 @@ import { categoryKeys } from "@/features/categories/api";
 import { api } from "@/services/api-client";
 import { userMessage } from "@/services/api-error";
 import type {
+  EditInput,
   SearchResults,
   SeriesScope,
   Tag,
@@ -22,8 +23,6 @@ export const transactionKeys = {
   list: (f: TransactionFilters) => ["transactions", "list", f] as const,
   detail: (id: string) => ["transactions", "detail", id] as const,
 };
-
-type EditInput = Partial<Omit<TransactionInput, "type" | "repeat">> & { fromAccountId?: string; toAccountId?: string };
 
 export const transactionsApi = {
   list: (f: TransactionFilters, page: number) =>

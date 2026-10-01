@@ -139,6 +139,18 @@ export interface TransferInput {
   notes?: string | null;
 }
 
+/**
+ * Corpo do PATCH de edição: receita/despesa usa os campos de TransactionInput; transferência usa origem/destino.
+ * `accountId`/`creditCardId` só vão quando a forma de pagamento muda, e nunca como `null`
+ * (a API trata "presente" como "trocar para" e rejeita `null`).
+ */
+export type EditInput = Partial<Omit<TransactionInput, "type" | "repeat" | "accountId" | "creditCardId">> & {
+  accountId?: string;
+  creditCardId?: string;
+  fromAccountId?: string;
+  toAccountId?: string;
+};
+
 export type SeriesScope = "single" | "future" | "all";
 
 export interface TransactionFilters {
