@@ -1,4 +1,4 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, Logger, Module } from '@nestjs/common';
 import { AppConfigService } from '../../config/app-config.service.js';
 import { LogMailTransport } from './log-mail.transport.js';
 import { MailService } from './mail.service.js';
@@ -22,6 +22,10 @@ import { SmtpMailTransport } from './smtp-mail.transport.js';
           case 'smtp':
             return new SmtpMailTransport(config.get('SMTP_URL') ?? '');
           default:
+            // O transporte log não envia nada; em produção isso costuma ser erro de configuração.
+            if (config.nodeEnv === 'production') {
+              new Logger('Mail').warn('MAIL_TRANSPORT=log em produção: nenhum e-mail será enviado');
+            }
             return new LogMailTransport(config.isDevelopment || config.isTest);
         }
       },

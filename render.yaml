@@ -41,7 +41,14 @@ services:
       - key: UPLOAD_DIR
         value: ./storage
       - key: MAIL_TRANSPORT
-        value: log
+        value: resend
+      - key: MAIL_FROM
+        value: "Lastro <nao-responda@lastrofinance.com>"
+      # Defina no dashboard do Render (gere em resend.com/api-keys) antes do deploy: sem ela o
+      # boot falha com MAIL_TRANSPORT=resend. O domínio de MAIL_FROM precisa estar verificado
+      # na Resend (resend.com/domains).
+      - key: RESEND_API_KEY
+        sync: false
       # Login com Google — OAuth Client "Web" no Google Cloud com a redirect URI
       # ${APP_URL}/api/auth/google/callback. Ambos vazios = login com Google desativado.
       - key: GOOGLE_CLIENT_ID

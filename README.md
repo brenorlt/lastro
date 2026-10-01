@@ -152,7 +152,7 @@ Detalhes em [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 | `SWAGGER_ENABLED` | Força o Swagger em produção |
 | `COOKIE_DOMAIN` | Domínio dos cookies de sessão (opcional) |
 | `UPLOAD_DIR` | Pasta dos avatares (padrão `./storage`; no Docker, volume `backend-storage`) |
-| `MAIL_TRANSPORT`, `MAIL_FROM`, `SMTP_URL` | `log` (dev, link no log) ou `smtp` (stub, Fase 12) |
+| `MAIL_TRANSPORT`, `MAIL_FROM`, `SMTP_URL`, `RESEND_API_KEY` | `log` (dev, link no log; não envia nada), `resend` (produção; exige `RESEND_API_KEY` e domínio de `MAIL_FROM` verificado na Resend) ou `smtp` (stub, Fase 12) |
 | `TRUST_PROXY`, `BODY_LIMIT` | Saltos de proxy confiáveis (padrão `1`, o Next) e tamanho máximo do corpo |
 | `ARGON2_*` | Custos do hash de senha (argon2id) |
 | `AUTH_MAX_FAILED_ATTEMPTS`, `AUTH_LOCKOUT_MINUTES` | Proteção contra força bruta |
