@@ -5,3 +5,4 @@ node_modules/
 videos/
 *.log
 coverage/
+.agents/
