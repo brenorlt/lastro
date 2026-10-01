@@ -30,24 +30,28 @@ Contraste WCAG medido sobre `canvas` (claro / escuro). Mínimo de 4,5:1 para tex
 
 | Token | Papel | Claro | Escuro | Contraste |
 | --- | --- | --- | --- | --- |
-| `canvas` | Fundo da aplicação | `#F6F6F3` | `#17181C` | — |
+| `canvas` | Fundo da aplicação | `#E2E7F1` | `#17181C` | — |
 | `surface` | Cards e painéis | `#FFFFFF` | `#202329` | — |
 | `surface-raised` | Modais, menus, popovers | `#FFFFFF` | `#282C34` | — |
-| `surface-sunken` | Campos, trilhas, hover | `#EFEFEB` | `#121317` | — |
-| `ink` | Texto principal | `#111316` | `#F2F2EF` | 17,2 / 15,8 |
-| `ink-2` | Texto secundário | `#565B63` | `#B7BCC3` | 6,3 / 9,3 |
-| `ink-3` | Rótulos, metadados | `#666B73` | `#9AA0A8` | 5,0 / 6,7 |
-| `accent` | Links, foco, ação primária | `#2F3FCF` | `#8E9BFF` | 7,1 / 7,0 |
-| `brass` | **Exclusivo do patrimônio** | `#8A6628` | `#D6B36E` | 4,8 / 8,9 |
-| `positive` | Entradas, meta atingida | `#0A7350` | `#4FCB95` | 5,4 / 8,7 |
-| `negative` | Excesso, erro, destrutivo | `#B3342D` | `#F2847B` | 5,6 / 7,1 |
-| `warning` | Atenção (80% do orçamento) | `#8F5B00` | `#E6B04C` | 5,3 / 9,0 |
+| `surface-sunken` | Campos, trilhas, hover | `#EEF2F7` | `#121317` | — |
+| `ink` | Texto principal | `#244C4E` | `#F2F2EF` | 7,6 / 15,8 |
+| `ink-2` | Texto secundário | `#4C5267` | `#B7BCC3` | 6,3 / 9,3 |
+| `ink-3` | Rótulos, metadados | `#5A6075` | `#9AA0A8` | 5,0 / 6,7 |
+| `accent` | Links, foco, seleção | `#2D6E57` | `#8E9BFF` | 4,9 / 7,0 |
+| `action` | Fundo do botão primário (CTA) | `#9EEA6C` | `#8E9BFF` | — |
+| `brass` | **Exclusivo do patrimônio** | `#805F25` | `#D6B36E` | 4,7 / 8,9 |
+| `positive` | Entradas, meta atingida | `#0A7350` | `#4FCB95` | 4,7 / 8,7 |
+| `negative` | Excesso, erro, destrutivo | `#B3342D` | `#F2847B` | 4,9 / 7,1 |
+| `warning` | Atenção (80% do orçamento) | `#8F5B00` | `#E6B04C` | 4,6 / 9,0 |
+
+O tema claro usa a paleta branco + verde: lima `#9EEA6C` só como fundo de ação (nunca texto),
+verde-escuro `#244C4E` como texto forte, cinza `#4C5267` no corpo.
 
 O fundo escuro era quase preto puro (`#0A0B0D`); subimos a luminância dele e a de `ink-2`/`ink-3`
 porque números e valores secundários (rótulos, legendas) ficavam camuflados nele — contraste
 numérico já passava, mas o efeito perceptual em telas reais era de "cinza sobre preto ilegível".
 
-Texto sobre o botão primário: branco sobre `#2F3FCF` = 7,7:1; `#0A0B0D` sobre `#8E9BFF` = 7,8:1.
+Texto sobre o botão primário: `#244C4E` sobre `#9EEA6C` = 6,5:1 (hover `#8BDC56` = 5,6:1); `#0A0B0D` sobre `#8E9BFF` = 7,8:1.
 Com `prefers-contrast: more`, `ink-2`, `ink-3` e `line` escurecem (ou clareiam no escuro).
 
 **Regra:** uma cor, um significado. Despesa **não** é vermelha: gastar não é erro. Vermelho fica para
@@ -56,19 +60,22 @@ depende só de cor.
 
 ### Paleta de gráficos (categórica, ordem fixa)
 
-Validada com o script do skill de dataviz (adjacentes: CVD ΔE ≥ 8,6 claro / 10,0 escuro; visão normal ≥ 16).
+Escuro validado com o script do skill de dataviz (adjacentes: CVD ΔE ≥ 10,0; visão normal ≥ 16).
+O claro usa os verdes da paleta + o caroço `#804B35` e uma tinta clara dele. Validado com CIEDE2000 e
+simulação Machado 2009 (protan/deutan/tritan): ΔE00 ≥ 11,8 entre **quaisquer** dois slots, em todas as
+visões; o trio brass + series-1 + series-2 da evolução patrimonial fica em ≥ 13,8.
 
 | Slot | Claro | Escuro |
 | --- | --- | --- |
-| series-1 (índigo) | `#3F51D8` | `#7584F5` |
-| series-2 (laranja) | `#E0703A` | `#D2672F` |
-| series-3 (verde-água) | `#1A9E7A` | `#22A37E` |
-| series-4 (âmbar) | `#D9A000` | `#B8860A` |
-| series-5 (rosa) | `#D8699A` | `#CC5F8F` |
-| series-6 (violeta) | `#6A4BC4` | `#9480EC` |
+| series-1 | `#337D63` (verde-contorno) | `#7584F5` |
+| series-2 | `#6E983C` (polpa escurecida) | `#D2672F` |
+| series-3 | `#58C411` (verde) | `#22A37E` |
+| series-4 | `#244C4E` (verde-escuro) | `#B8860A` |
+| series-5 | `#804B35` (caroço) | `#CC5F8F` |
+| series-6 | `#CC9883` (caroço clareado) | `#9480EC` |
 
-O âmbar claro fica abaixo de 3:1, por isso todo gráfico categórico traz legenda com valores ou uma
-tabela. A cor segue a entidade, não a posição. A 7ª categoria vira "Outros".
+No claro, series-3 e 6 ficam abaixo de 3:1 sobre branco, por isso todo gráfico categórico traz
+legenda com valores ou uma tabela. A cor segue a entidade, não a posição. A 7ª categoria vira "Outros".
 
 ## Tipografia
 

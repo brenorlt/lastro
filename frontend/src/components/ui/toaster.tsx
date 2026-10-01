@@ -16,7 +16,7 @@ export function Toaster() {
         classNames: {
           toast: "!rounded-lg !bg-surface-raised !text-ink !ring-1 !ring-line !border-0 !shadow-lg !font-sans",
           description: "!text-ink-2",
-          actionButton: "!bg-accent !text-accent-ink",
+          actionButton: "!bg-action !text-action-ink",
           success: "[&_[data-icon]]:!text-positive",
           error: "[&_[data-icon]]:!text-negative",
           warning: "[&_[data-icon]]:!text-warning",

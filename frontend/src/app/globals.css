@@ -11,28 +11,34 @@
 :root {
   color-scheme: light;
 
-  /* Superfícies */
-  --canvas: #f6f6f3;
+  /* Superfícies — tema claro branco + verde */
+  --canvas: #e2e7f1;
   --surface: #ffffff;
   --surface-raised: #ffffff;
-  --surface-sunken: #efefeb;
-  --line: #e4e4df;
-  --line-strong: #d3d3cc;
+  --surface-sunken: #eef2f7;
+  --line: #d8dee9;
+  --line-strong: #c3cbd9;
 
   /* Tinta (texto e ícones) */
-  --ink: #111316;
-  --ink-2: #565b63;
-  --ink-3: #666b73;
+  --ink: #244c4e;
+  --ink-2: #4c5267;
+  --ink-3: #5a6075;
   --ink-inverse: #ffffff;
 
-  /* Interação — o único azul da interface */
-  --accent: #2f3fcf;
-  --accent-hover: #2634b3;
-  --accent-soft: #eceefc;
+  /* Interação — links, foco, seleção. Verde escurecido para passar AA também sobre o canvas. */
+  --accent: #2d6e57;
+  --accent-hover: #255b48;
+  --accent-soft: #e9f8df;
   --accent-ink: #ffffff;
 
+  /* Ação primária (CTA). Lima só como fundo, nunca como texto. */
+  --action: #9eea6c;
+  --action-hover: #8bdc56;
+  --action-ink: #244c4e;
+
   /* Lastro — reservado ao patrimônio. Nunca usar em botões ou status. */
-  --brass: #8a6628;
+  /* Dourado original, um tom mais escuro para manter AA sobre o canvas #e2e7f1. */
+  --brass: #805f25;
   --brass-soft: #f4ede0;
 
   /* Status */
@@ -43,21 +49,23 @@
   --warning: #8f5b00;
   --warning-soft: #f8f0df;
 
-  /* Gráficos — categórico validado (CVD ΔE ≥ 8.6). Âmbar < 3:1: exige rótulo direto ou tabela. */
-  --series-1: #3f51d8;
-  --series-2: #e0703a;
-  --series-3: #1a9e7a;
-  --series-4: #d9a000;
-  --series-5: #d8699a;
-  --series-6: #6a4bc4;
-  --grid: #ecece7;
+  /* Gráficos — verdes da marca + caroço, validado (CVD ΔE00 ≥ 11.8 entre quaisquer dois slots).
+     series-3/6 < 3:1 sobre branco: exigem rótulo direto ou tabela. */
+  --series-1: #337d63;
+  --series-2: #6e983c;
+  --series-3: #58c411;
+  --series-4: #244c4e;
+  --series-5: #804b35;
+  --series-6: #cc9883;
+  --grid: #e9edf3;
 
-  --focus: #2f3fcf;
+  --focus: #244c4e;
   --scrim: rgb(17 19 22 / 0.32);
   /* Tour guiado: mais escuro que o scrim de modais, para o bloco em destaque saltar. */
   --tour-scrim: rgb(12 14 18 / 0.68);
 
-  --shadow-color: 220 15% 20%;
+  /* Sombras tingidas pelo verde-escuro (#244c4e). */
+  --shadow-color: 182 37% 22%;
 }
 
 .dark {
@@ -79,6 +87,11 @@
   --accent-hover: #a7b1ff;
   --accent-soft: #1c2040;
   --accent-ink: #0a0b0d;
+
+  /* No escuro a ação primária continua sendo o próprio accent. */
+  --action: #8e9bff;
+  --action-hover: #a7b1ff;
+  --action-ink: #0a0b0d;
 
   --brass: #d6b36e;
   --brass-soft: #2a2417;
@@ -107,9 +120,9 @@
 
 @media (prefers-contrast: more) {
   :root {
-    --ink-2: #3d4148;
-    --ink-3: #4a4e55;
-    --line: #b9b9b2;
+    --ink-2: #3a3f52;
+    --ink-3: #474d60;
+    --line: #aeb7c7;
   }
   .dark {
     --ink-2: #c9cdd3;
@@ -133,6 +146,9 @@
   --color-accent-hover: var(--accent-hover);
   --color-accent-soft: var(--accent-soft);
   --color-accent-ink: var(--accent-ink);
+  --color-action: var(--action);
+  --color-action-hover: var(--action-hover);
+  --color-action-ink: var(--action-ink);
   --color-brass: var(--brass);
   --color-brass-soft: var(--brass-soft);
   --color-positive: var(--positive);

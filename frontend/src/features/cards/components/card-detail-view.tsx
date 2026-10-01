@@ -129,7 +129,7 @@ export function CardDetailView({ id }: { id: string }) {
                       <button type="button" aria-current={active ? "true" : undefined} onClick={() => setRef(i.referenceMonth)}
                         className={cn("flex h-10 items-center gap-2 rounded-full px-3.5 text-xs font-medium ring-1 ring-inset transition-colors", active ? "bg-ink text-ink-inverse ring-ink" : "bg-surface text-ink-2 ring-line hover:ring-line-strong")}>
                         {monthYear(`${i.referenceMonth}-01`)}
-                        <span aria-label={s.label} className={cn("size-1.5 rounded-full", { OPEN: "bg-accent", CLOSED: "bg-warning", PAID: "bg-positive", OVERDUE: "bg-negative" }[i.status])} />
+                        <span aria-label={s.label} className={cn("size-1.5 rounded-full", { OPEN: "bg-ink-3 dark:bg-accent", CLOSED: "bg-warning", PAID: "bg-positive", OVERDUE: "bg-negative" }[i.status])} />
                       </button>
                     </li>
                   );

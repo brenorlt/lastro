@@ -24,7 +24,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="flex min-h-dvh">
       <a
         href="#conteudo"
-        className="sr-only z-50 rounded-md bg-accent px-4 py-2 text-accent-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+        className="sr-only z-50 rounded-md bg-action px-4 py-2 text-action-ink focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
       >
         Pular para o conteúdo
       </a>
