@@ -204,11 +204,15 @@ export class AuthService {
       throw new AppException(ErrorCode.INVALID_CREDENTIALS);
     }
 
-    const update: Prisma.UserUpdateInput = { ...CLEARED_LOCKOUT };
-    if (this.passwords.needsRehash(passwordHash)) {
-      update.passwordHash = await this.passwords.hash(dto.password);
+    // Cada query é um round-trip ao banco: só escreve quando há algo a limpar ou a rehashar.
+    const hasLockoutState =
+      user.failedLoginAttempts !== 0 || user.lockoutCount !== 0 || user.lockedUntil !== null;
+    const rehash = this.passwords.needsRehash(passwordHash);
+    if (hasLockoutState || rehash) {
+      const update: Prisma.UserUpdateInput = { ...CLEARED_LOCKOUT };
+      if (rehash) update.passwordHash = await this.passwords.hash(dto.password);
+      await this.prisma.user.update({ where: { id: user.id }, data: update });
     }
-    await this.prisma.user.update({ where: { id: user.id }, data: update });
 
     // Só revelado depois da senha correta.
     if (!user.emailVerifiedAt && this.config.get('AUTH_REQUIRE_EMAIL_VERIFICATION')) {
@@ -486,7 +490,8 @@ export class AuthService {
     metadata: Record<string, unknown>,
   ): Promise<AuthResult> {
     const { session, refreshToken } = await this.sessions.create(user.id, context);
-    await this.events.record({
+    // Auditoria fora do caminho crítico: `record` nunca rejeita, então não precisa ser aguardado.
+    void this.events.record({
       type: 'LOGIN_SUCCESS',
       userId: user.id,
       email: user.email,
