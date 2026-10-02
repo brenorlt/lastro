@@ -493,6 +493,33 @@ describe('Transactions (e2e)', () => {
       ).toBe(expected.length);
     });
 
+    it('com data final, lança todas as ocorrências até ela (além do horizonte de 60 dias)', async () => {
+      const endDate = addMonthsClamped(TODAY, 5);
+      const rows = data<Tx[]>(
+        await s
+          .create({
+            type: 'EXPENSE',
+            amount: '50.00',
+            description: 'Academia',
+            date: TODAY,
+            accountId: acc,
+            repeat: { kind: 'RECURRING', frequency: 'MONTHLY', endDate },
+          })
+          .expect(201),
+      );
+      expect(rows.map((r) => r.date)).toEqual(
+        recurrenceDates({
+          start: TODAY,
+          frequency: 'MONTHLY',
+          interval: 1,
+          endDate,
+          until: endDate,
+        }),
+      );
+      expect(rows).toHaveLength(6);
+      expect((rows.at(-1)?.date ?? '') <= endDate).toBe(true);
+    });
+
     it('autoConfirm confirma ocorrências vencidas no motor', async () => {
       const rows = data<Tx[]>(
         await s

@@ -21,6 +21,14 @@ import { nextOccurrenceAfter, recurrenceDates } from './schedule.js';
 /** Quantos dias à frente as ocorrências ficam materializadas. */
 export const RECURRENCE_HORIZON_DAYS = 60;
 export const MAX_OCCURRENCES_PER_RUN = 500;
+
+/**
+ * Até onde materializar: séries com data final são lançadas por inteiro (o usuário espera
+ * ver todos os meses até lá); séries sem fim só até o horizonte, e o motor completa depois.
+ */
+export function materializeUntil(today: DateOnly, endDate: DateOnly | null): DateOnly {
+  return endDate ?? addDays(today, RECURRENCE_HORIZON_DAYS);
+}
 const ENGINE_INTERVAL_MS = 60 * 60 * 1000;
 
 class ConcurrentMaterializationError extends Error {}
@@ -72,7 +80,7 @@ export class RecurrenceService implements OnModuleInit, OnModuleDestroy {
       frequency: template.frequency,
       interval: template.interval,
       endDate,
-      until: addDays(today, RECURRENCE_HORIZON_DAYS),
+      until: materializeUntil(today, endDate),
       after,
       limit: MAX_OCCURRENCES_PER_RUN,
     });

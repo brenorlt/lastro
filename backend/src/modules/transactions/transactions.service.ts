@@ -33,7 +33,7 @@ import type {
 import {
   MAX_OCCURRENCES_PER_RUN,
   RecurrenceService,
-  RECURRENCE_HORIZON_DAYS,
+  materializeUntil,
 } from './recurrence.service.js';
 import { installmentDates, recurrenceDates } from './schedule.js';
 import { computeTotals } from './totals.js';
@@ -246,7 +246,7 @@ export class TransactionsService {
           frequency,
           interval,
           endDate,
-          until: addDays(today, RECURRENCE_HORIZON_DAYS),
+          until: materializeUntil(today, endDate),
           limit: MAX_OCCURRENCES_PER_RUN,
         });
         if (preview.length >= MAX_OCCURRENCES_PER_RUN) {
