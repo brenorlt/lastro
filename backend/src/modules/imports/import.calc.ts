@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import type { DateOnly } from '../../common/utils/date-only.js';
 import type { Decimal } from '../../common/utils/money.js';
-import { merchantKey } from './categorize.js';
+import { merchantKey } from '../categories/categorize.js';
 import type { ParsedStatement, StatementLine } from './parsers/statement.types.js';
 
 export type TargetKind = 'ACCOUNT' | 'CARD';

@@ -17,11 +17,14 @@ import { ParseIdPipe } from '../../common/pipes/parse-id.pipe.js';
 import { ApiEnvelope, ApiErrors } from '../../common/swagger/api-responses.decorator.js';
 import type { AuthUser } from '../../common/types/auth-user.js';
 import { CategoriesService } from './categories.service.js';
+import { CategorySuggesterService } from './category-suggester.service.js';
 import {
   CategoryDto,
+  CategorySuggestionDto,
   CreateCategoryDto,
   DeleteCategoryQueryDto,
   ListCategoriesQueryDto,
+  SuggestCategoryQueryDto,
   UpdateCategoryDto,
 } from './dto/category.dto.js';
 
@@ -31,7 +34,10 @@ const CategoryId = () => Param('id', new ParseIdPipe(ErrorCode.CATEGORY_NOT_FOUN
 @ApiBearerAuth()
 @Controller('categories')
 export class CategoriesController {
-  constructor(private readonly categories: CategoriesService) {}
+  constructor(
+    private readonly categories: CategoriesService,
+    private readonly suggester: CategorySuggesterService,
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Árvore de categorias (2 níveis, ordem alfabética pt-BR)' })
@@ -42,6 +48,19 @@ export class CategoriesController {
     @Query() query: ListCategoriesQueryDto,
   ): Promise<CategoryDto[]> {
     return this.categories.tree(user.id, query.type);
+  }
+
+  @Get('suggest')
+  @ApiOperation({
+    summary: 'Categoria que seria aplicada automaticamente a um lançamento com esta descrição',
+  })
+  @ApiEnvelope(CategorySuggestionDto)
+  @ApiErrors(ErrorCode.VALIDATION_ERROR)
+  async suggest(
+    @CurrentUser() user: AuthUser,
+    @Query() query: SuggestCategoryQueryDto,
+  ): Promise<CategorySuggestionDto> {
+    return { category: await this.suggester.suggestRef(user.id, query.description, query.type) };
   }
 
   @Post()

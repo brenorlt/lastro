@@ -116,6 +116,10 @@ export class TransactionDto {
   transferAccount: TransactionAccountRefDto | null;
   @ApiProperty({ type: TransactionCategoryRefDto, nullable: true })
   category: TransactionCategoryRefDto | null;
+  @ApiProperty({
+    description: 'Categoria escolhida automaticamente e ainda não confirmada pelo usuário',
+  })
+  categoryAuto: boolean;
   @ApiProperty({ type: () => CreditCardRefDto, nullable: true })
   creditCard: CreditCardRefDto | null;
   @ApiProperty({ type: () => InvoiceRefDto, nullable: true }) invoice: InvoiceRefDto | null;

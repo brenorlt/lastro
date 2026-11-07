@@ -20,7 +20,7 @@ import { useOpenTransaction } from "@/features/transactions/use-open-transaction
 import { useComposer } from "@/stores/composer-store";
 import { useUiStore } from "@/stores/ui-store";
 import type { Transaction, TransactionFilters, TransactionTotals } from "@/types/finance";
-import { isSeries, useDeleteTransaction, useDuplicateTransaction, useToggleCleared, useTransactions } from "../api";
+import { isSeries, useConfirmCategory, useDeleteTransaction, useDuplicateTransaction, useToggleCleared, useTransactions } from "../api";
 import { FiltersBar, MonthNavigator, type ListFilters } from "./filters-bar";
 import { ScopeDialog } from "./scope-dialog";
 import { TransactionRow } from "./transaction-row";
@@ -101,6 +101,7 @@ export function TransactionsView() {
   const list = useTransactions(query);
   const toggle = useToggleCleared();
   const duplicate = useDuplicateTransaction();
+  const confirmCategory = useConfirmCategory();
   const del = useDeleteTransaction();
 
   // Agendado/Não pago são inferidos pela data (não existem como status na API): PENDING é buscado
@@ -189,6 +190,7 @@ export function TransactionsView() {
                     hidden={hidden}
                     onEdit={() => openEdit(t)}
                     onToggle={() => toggle.mutate(t)}
+                    onConfirmCategory={() => confirmCategory.mutate(t)}
                     onDuplicate={() => duplicate.mutate(t.id)}
                     onDelete={() => setDeleting(t)}
                   />

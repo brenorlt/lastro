@@ -1,6 +1,6 @@
 "use client";
 
-import { ArrowLeftRight, Check, Copy, MoreHorizontal, Pencil, Repeat, Trash2, Undo2 } from "lucide-react";
+import { ArrowLeftRight, Check, Copy, MoreHorizontal, Pencil, Repeat, Sparkles, Trash2, Undo2 } from "lucide-react";
 import { Amount } from "@/components/finance/amount";
 import { IconButton } from "@/components/ui/button";
 import {
@@ -22,6 +22,7 @@ interface RowProps {
   hidden: boolean;
   onEdit: () => void;
   onToggle: () => void;
+  onConfirmCategory: () => void;
   onDuplicate: () => void;
   onDelete: () => void;
 }
@@ -34,7 +35,8 @@ function subtitle(t: Transaction) {
   return [t.category?.name ?? "Sem categoria", t.account?.name ?? (t.creditCard && `${t.creditCard.name} (crédito)`)].filter(Boolean).join(" · ");
 }
 
-export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onDuplicate, onDelete }: RowProps) {
+export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onConfirmCategory, onDuplicate, onDelete }: RowProps) {
+  const autoCategory = t.categoryAuto && t.category;
   const pending = t.status === "PENDING";
   const flow = t.type === "INCOME" ? "income" : t.type === "EXPENSE" ? "expense" : "neutral";
   const confirmLabel = t.type === "INCOME" ? "Marcar como recebido" : t.type === "TRANSFER" ? "Confirmar transferência" : "Marcar como pago";
@@ -64,6 +66,12 @@ export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onDup
         </button>
         <div className="mt-0.5 flex min-w-0 items-center gap-1.5 text-xs text-ink-3">
           <span className="truncate">{subtitle(t)}</span>
+          {autoCategory && (
+            <span className="inline-flex shrink-0 items-center gap-0.5 rounded-[4px] bg-accent-soft px-1.5 text-2xs text-accent" title="Categoria escolhida automaticamente">
+              <Sparkles className="size-2.5" aria-hidden />
+              <span>auto<span className="sr-only">: categoria escolhida automaticamente</span></span>
+            </span>
+          )}
           {t.installment && <span className="num shrink-0 rounded-[4px] bg-surface-sunken px-1.5 text-2xs text-ink-2">{t.installment.number}/{t.installment.total}</span>}
           {t.recurring && <Repeat className="size-3 shrink-0" aria-label="Recorrente" />}
           {t.tags.length > 0 && <span className="hidden truncate sm:inline">· {t.tags.map((x) => `#${x.name}`).join(" ")}</span>}
@@ -107,6 +115,11 @@ export function TransactionRow({ transaction: t, hidden, onEdit, onToggle, onDup
             {canToggleCleared && (
               <DropdownMenuItem onSelect={onToggle} className="[&_svg]:text-positive">
                 <Check aria-hidden /> {confirmLabel}
+              </DropdownMenuItem>
+            )}
+            {autoCategory && (
+              <DropdownMenuItem onSelect={onConfirmCategory}>
+                <Sparkles aria-hidden /> Confirmar categoria ({t.category?.name})
               </DropdownMenuItem>
             )}
             <DropdownMenuItem onSelect={onDuplicate}><Copy aria-hidden /> Duplicar para hoje</DropdownMenuItem>

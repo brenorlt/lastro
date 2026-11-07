@@ -123,7 +123,8 @@ describe('Dashboard (e2e)', () => {
           type,
           amount,
           date,
-          description: `${type} ${date}`,
+          // Sem categoria, descrição distinta para não herdar a categoria por histórico.
+          description: categoryId ? `${type} ${date}` : `Avulso ${date}`,
           accountId: main,
           categoryId,
           ...extra,

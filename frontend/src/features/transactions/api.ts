@@ -72,11 +72,13 @@ export function useCreateTransaction() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: transactionsApi.create,
-    onSuccess: ({ data }) => {
+    onSuccess: ({ data }, input) => {
       const first = data[0];
       const label = first?.type === "INCOME" ? "Receita" : "Despesa";
+      // Sem categoria escolhida, o backend categoriza sozinho: avisa qual foi para o usuário conferir.
+      const auto = !input.categoryId && first?.category ? ` · categorizada como ${first.category.name}` : "";
       toast.success(data.length > 1 ? `${data.length} lançamentos criados` : `${label} registrada`, {
-        description: first?.description,
+        description: first ? `${first.description}${auto}` : undefined,
       });
       return invalidateMoney(qc);
     },
@@ -100,6 +102,19 @@ export function useUpdateTransaction() {
     mutationFn: ({ id, input, scope }: { id: string; input: EditInput; scope: SeriesScope }) => transactionsApi.update(id, input, scope),
     onSuccess: ({ data }) => {
       toast.success(data.length > 1 ? `${data.length} lançamentos atualizados` : "Lançamento atualizado");
+      return invalidateMoney(qc);
+    },
+  });
+}
+
+/** Confirma a categoria escolhida automaticamente: passa a contar como escolha do usuário. */
+export function useConfirmCategory() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: (t: Transaction) => transactionsApi.update(t.id, { categoryId: t.category?.id ?? null }, "single"),
+    onError: (err) => toast.error(userMessage(err)),
+    onSuccess: ({ data }) => {
+      toast.success("Categoria confirmada", { description: data[0]?.category?.name });
       return invalidateMoney(qc);
     },
   });

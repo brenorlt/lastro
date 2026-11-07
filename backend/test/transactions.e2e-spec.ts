@@ -17,6 +17,7 @@ interface Tx {
   account: { id: string } | null;
   transferAccount: { id: string } | null;
   category: { id: string; parentId: string | null } | null;
+  categoryAuto: boolean;
   tags: { id: string; name: string }[];
   installment: { groupId: string; number: number; total: number } | null;
   recurring: { id: string; active: boolean; endDate: string | null } | null;
@@ -1303,6 +1304,136 @@ describe('Transactions (e2e)', () => {
       expect(await s.balance(a)).toBe('500.00');
       expect(await s.balance(b)).toBe('-40.00');
       await assertInvariant(s.user.id);
+    });
+  });
+
+  describe('categorização automática (sem categoria escolhida)', () => {
+    it('usa o histórico do usuário, depois palavra-chave; nunca sobrescreve nem inventa', async () => {
+      const s = await setup('tx-autocat');
+      const acc = await s.account('Corrente', '500.00');
+      const transporte = await s.category('Transporte', 'EXPENSE');
+      const lazer = await s.category('Lazer', 'EXPENSE');
+      const salario = await s.category('Salário', 'INCOME');
+      const one = async (body: Record<string, unknown>) =>
+        data<Tx[]>(
+          await s.create({ amount: '10.00', date: TODAY, accountId: acc, ...body }).expect(201),
+        )[0];
+
+      // Palavra-chave → categoria com o nome padrão (sem categoryId e com categoryId null).
+      expect((await one({ type: 'EXPENSE', description: 'Uber pro centro' })).category?.id).toBe(
+        transporte,
+      );
+      expect(
+        (await one({ type: 'EXPENSE', description: 'Gasolina', categoryId: null })).category?.id,
+      ).toBe(transporte);
+      expect((await one({ type: 'INCOME', description: 'Salário outubro' })).category?.id).toBe(
+        salario,
+      );
+      // Categoria escolhida pelo usuário sempre vale.
+      expect(
+        (await one({ type: 'EXPENSE', description: 'Uber', categoryId: lazer })).category?.id,
+      ).toBe(lazer);
+      // Sem pista nenhuma → continua sem categoria.
+      expect((await one({ type: 'EXPENSE', description: 'Presente da Ana' })).category).toBeNull();
+
+      // Histórico ganha da palavra-chave e ignora dígitos/acentos: "Posto 123" já foi Lazer.
+      await one({ type: 'EXPENSE', description: 'Posto Avenida 123', categoryId: lazer });
+      expect((await one({ type: 'EXPENSE', description: 'POSTO AVENIDA 77' })).category?.id).toBe(
+        lazer,
+      );
+
+      // O tipo precisa casar: aprendizado de despesa não vale para receita.
+      expect((await one({ type: 'INCOME', description: 'Posto Avenida' })).category).toBeNull();
+    });
+
+    it('marca a categoria automática, não aprende com ela até o usuário confirmar', async () => {
+      const s = await setup('tx-autocat-flag');
+      const acc = await s.account('Corrente', '500.00');
+      const transporte = await s.category('Transporte', 'EXPENSE');
+      const lazer = await s.category('Lazer', 'EXPENSE');
+      const one = async (body: Record<string, unknown>) =>
+        data<Tx[]>(
+          await s.create({ amount: '10.00', date: TODAY, accountId: acc, ...body }).expect(201),
+        )[0];
+
+      expect(await one({ type: 'EXPENSE', description: 'Uber' })).toMatchObject({
+        category: { id: transporte },
+        categoryAuto: true,
+      });
+      expect(await one({ type: 'EXPENSE', description: 'Uber', categoryId: lazer })).toMatchObject({
+        category: { id: lazer },
+        categoryAuto: false,
+      });
+      expect(await one({ type: 'EXPENSE', description: 'Nada a ver' })).toMatchObject({
+        category: null,
+        categoryAuto: false,
+      });
+
+      // Usuário escolhe Lazer (antigo); um novo sem categoria herda Lazer automaticamente (recente).
+      const first = await one({
+        type: 'EXPENSE',
+        description: 'Bar do Zé 1',
+        categoryId: lazer,
+        date: addDays(TODAY, -2),
+      });
+      const auto = await one({
+        type: 'EXPENSE',
+        description: 'Bar do Zé 2',
+        date: addDays(TODAY, -1),
+      });
+      expect(auto).toMatchObject({ category: { id: lazer }, categoryAuto: true });
+
+      // O usuário corrige o antigo: a sugestão segue a escolha dele, não o palpite mais recente.
+      await s.client
+        .patch(`/api/transactions/${first.id}`)
+        .send({ categoryId: transporte })
+        .expect(200);
+      expect((await one({ type: 'EXPENSE', description: 'Bar do Zé 3' })).category?.id).toBe(
+        transporte,
+      );
+
+      // Confirmar (reenviar a mesma categoria) vira escolha do usuário e passa a valer no aprendizado.
+      const [confirmed] = data<Tx[]>(
+        await s.client
+          .patch(`/api/transactions/${auto.id}?scope=single`)
+          .send({ categoryId: lazer })
+          .expect(200),
+      );
+      expect(confirmed.categoryAuto).toBe(false);
+      expect((await one({ type: 'EXPENSE', description: 'Bar do Zé 4' })).category?.id).toBe(lazer);
+
+      // Recorrência criada com categoria automática propaga a marca às ocorrências.
+      const series = data<Tx[]>(
+        await s
+          .create({
+            type: 'EXPENSE',
+            amount: '30.00',
+            date: addMonthsClamped(TODAY, -2),
+            accountId: acc,
+            description: 'Uber mensal',
+            repeat: { kind: 'RECURRING', frequency: 'MONTHLY' },
+          })
+          .expect(201),
+      );
+      expect(series.length).toBeGreaterThan(1);
+      expect(series.every((t) => t.categoryAuto && t.category?.id === transporte)).toBe(true);
+    });
+
+    it('GET /categories/suggest devolve a categoria que seria aplicada', async () => {
+      const s = await setup('tx-autocat-suggest');
+      const transporte = await s.category('Transporte', 'EXPENSE');
+      const suggest = (q: string) => s.client.get(`/api/categories/suggest?${q}`);
+
+      expect(
+        data<{ category: { id: string; name: string } | null }>(
+          await suggest('description=Uber%20pro%20centro&type=EXPENSE').expect(200),
+        ).category,
+      ).toMatchObject({ id: transporte, name: 'Transporte' });
+      expect(
+        data<{ category: unknown }>(await suggest('description=Uber&type=INCOME').expect(200))
+          .category,
+      ).toBeNull();
+      expect(error(await suggest('type=EXPENSE').expect(400)).code).toBe('VALIDATION_ERROR');
     });
   });
 });

@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import { AccountIcon, CardIcon } from "@/components/finance/bank-logo";
 import { EntityIcon } from "@/components/ui/entity-icon";
 import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -37,7 +38,7 @@ export function AccountSelect({ value, onChange, exclude, placeholder = "Escolha
   );
 }
 
-export function CategorySelect({ value, onChange, type, allowNone = true, allLabel, ...aria }: BaseProps & { type: CategoryType; allowNone?: boolean; allLabel?: string }) {
+export function CategorySelect({ value, onChange, type, allowNone = true, allLabel, ...aria }: BaseProps & { type: CategoryType; allowNone?: boolean; allLabel?: ReactNode }) {
   const { data } = useCategories(type);
   return (
     <Select value={value ?? NONE} onValueChange={(v) => onChange(v === NONE ? null : v)}>

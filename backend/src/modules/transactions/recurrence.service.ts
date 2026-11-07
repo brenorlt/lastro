@@ -121,6 +121,7 @@ export class RecurrenceService implements OnModuleInit, OnModuleDestroy {
         creditCardId: template.creditCardId,
         invoiceId: invoiceIds.get(date) ?? null,
         categoryId: template.categoryId,
+        categoryAuto: template.categoryAuto,
         recurringTransactionId: template.id,
       } satisfies Prisma.TransactionCreateManyInput;
     });

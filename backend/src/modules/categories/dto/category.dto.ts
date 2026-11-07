@@ -33,6 +33,36 @@ export class CategoryDto {
   children?: CategoryDto[];
 }
 
+export class SuggestCategoryQueryDto {
+  @ApiProperty({ minLength: 1, maxLength: 120, example: 'Almoço no iFood' })
+  @Transform(trim)
+  @IsString({ message: 'Informe a descrição' })
+  @MinLength(1, { message: 'Informe a descrição' })
+  @MaxLength(120, { message: 'A descrição deve ter no máximo 120 caracteres' })
+  description: string;
+
+  @ApiProperty({ enum: CATEGORY_TYPES })
+  @IsIn(CATEGORY_TYPES, { message: 'Tipo inválido' })
+  type: CategoryType;
+}
+
+export class SuggestedCategoryDto {
+  @ApiProperty({ format: 'uuid' }) id: string;
+  @ApiProperty() name: string;
+  @ApiProperty({ type: String, nullable: true }) color: string | null;
+  @ApiProperty({ type: String, nullable: true }) icon: string | null;
+  @ApiProperty({ type: String, format: 'uuid', nullable: true }) parentId: string | null;
+}
+
+export class CategorySuggestionDto {
+  @ApiProperty({
+    type: SuggestedCategoryDto,
+    nullable: true,
+    description: 'Categoria que seria aplicada se o lançamento fosse salvo sem categoria',
+  })
+  category: SuggestedCategoryDto | null;
+}
+
 export class ListCategoriesQueryDto {
   @ApiPropertyOptional({ enum: CATEGORY_TYPES })
   @IsOptional()

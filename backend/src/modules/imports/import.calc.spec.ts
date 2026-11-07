@@ -1,6 +1,6 @@
 import { describe, expect, it } from '@jest/globals';
 import { Decimal } from '../../common/utils/money.js';
-import { keywordCategory, merchantKey } from './categorize.js';
+import { keywordCategory, merchantKey } from '../categories/categorize.js';
 import { autoInvert, buildPreview, type ExistingEntry, lineExternalIds } from './import.calc.js';
 import type { StatementLine } from './parsers/statement.types.js';
 

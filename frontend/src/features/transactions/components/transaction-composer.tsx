@@ -1,6 +1,7 @@
 "use client";
 
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Sparkles } from "lucide-react";
 import { useState } from "react";
 import { Controller, useForm, useWatch } from "react-hook-form";
 import { Button } from "@/components/ui/button";
@@ -19,6 +20,7 @@ import { todayISO } from "@/lib/dates";
 import { ApiError } from "@/services/api-error";
 import { useComposer, type ComposerMode } from "@/stores/composer-store";
 import type { SeriesScope } from "@/types/finance";
+import { useCategorySuggestion } from "../../categories/api";
 import { isSeries, useCreateTransaction, useCreateTransfer, useTags, useUpdateTransaction } from "../api";
 import { composerSchema, emptyComposer, fromTransaction, toTransactionInput, toTransactionPatch, toTransferInput, type ComposerValues } from "../schemas";
 import { AccountSelect, CategorySelect, PaymentSourceSelect } from "./entity-selects";
@@ -71,6 +73,22 @@ function ComposerBody() {
   const mode = (v.mode ?? initialMode) as ComposerMode;
   const future = (v.date ?? today) > today;
   const onCard = mode === "EXPENSE" && Boolean(v.creditCardId);
+  const categoryType = mode === "INCOME" ? "INCOME" : "EXPENSE";
+  // Lançamento novo sem categoria: mostra qual o sistema vai aplicar ao salvar.
+  const suggestion = useCategorySuggestion(v.description ?? "", categoryType, !editing && mode !== "TRANSFER" && !v.categoryId);
+  const autoLabel = (
+    <span className="inline-flex items-center gap-1.5">
+      <Sparkles className="size-3.5 shrink-0 text-accent" aria-hidden />
+      {suggestion?.name ?? "Automática"}
+    </span>
+  );
+  const autoHint = editing
+    ? editing.categoryAuto && v.categoryId === editing.category?.id
+      ? "Escolhida automaticamente. Salvar confirma a categoria."
+      : undefined
+    : suggestion && !v.categoryId
+      ? "Sugerida pela descrição. Escolha outra se preferir."
+      : undefined;
 
   const onError = (err: unknown) => {
     if (err instanceof ApiError) {
@@ -207,8 +225,8 @@ function ComposerBody() {
                 control={control}
                 name="categoryId"
                 render={({ field }) => (
-                  <Field label="Categoria" error={errors.categoryId?.message}>
-                    <CategorySelect type={mode === "INCOME" ? "INCOME" : "EXPENSE"} value={field.value} onChange={field.onChange} />
+                  <Field label="Categoria" hint={autoHint} error={errors.categoryId?.message}>
+                    <CategorySelect type={categoryType} value={field.value} onChange={field.onChange} allLabel={editing ? undefined : autoLabel} />
                   </Field>
                 )}
               />
