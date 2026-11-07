@@ -14,7 +14,7 @@ export function merchantKey(description: string): string {
 type Rule = { type: 'INCOME' | 'EXPENSE'; category: string; terms: string[] };
 
 /**
- * Palavras-chave comuns em extratos brasileiros → nome da categoria padrão. Só é usada quando o
+ * Palavras-chave comuns em extratos brasileiros e em descrições digitadas à mão → nome da categoria padrão. Só é usada quando o
  * histórico do usuário não sugere nada; a ordem importa ("amazon prime" antes de "amazon").
  */
 const RULES: Rule[] = [
@@ -71,6 +71,10 @@ const RULES: Rule[] = [
       'acougue',
       'hortifruti',
       'zaffari',
+      'almoco',
+      'jantar',
+      'lanche',
+      'feira',
     ],
   },
   {
@@ -81,6 +85,11 @@ const RULES: Rule[] = [
       'cabify',
       'posto',
       'combustivel',
+      'gasolina',
+      'etanol',
+      'shell',
+      'taxi',
+      '99 ?pop',
       'ipiranga',
       'petrobras',
       'estacionamento',
@@ -107,6 +116,10 @@ const RULES: Rule[] = [
       'unimed',
       'amil',
       'odonto',
+      'dentista',
+      'medico',
+      'consulta',
+      'remedio',
     ],
   },
   {
@@ -114,6 +127,9 @@ const RULES: Rule[] = [
     category: 'Moradia',
     terms: [
       'aluguel',
+      'conta de luz',
+      'conta de agua',
+      'gas',
       'condominio',
       'energia',
       'enel',

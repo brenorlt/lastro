@@ -85,6 +85,8 @@ export interface Transaction {
   account: EntityRef | null;
   transferAccount: EntityRef | null;
   category: (EntityRef & { parentId: string | null }) | null;
+  /** Categoria escolhida automaticamente e ainda não confirmada pelo usuário. */
+  categoryAuto: boolean;
   tags: Tag[];
   creditCard: { id: string; name: string; color: string; brand: string; lastFourDigits: string | null } | null;
   invoice: { id: string; referenceMonth: string; dueDate: string } | null;

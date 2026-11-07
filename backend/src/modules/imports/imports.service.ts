@@ -3,10 +3,9 @@ import { AppException } from '../../common/errors/app.exception.js';
 import { ErrorCode } from '../../common/errors/error-codes.js';
 import { addDays, fromDbDate } from '../../common/utils/date-only.js';
 import { Decimal } from '../../common/utils/money.js';
-import { normalizeSearch } from '../../common/utils/search-text.js';
 import { PrismaService } from '../../database/prisma.service.js';
+import { CategorySuggesterService } from '../categories/category-suggester.service.js';
 import { TransactionsService } from '../transactions/transactions.service.js';
-import { keywordCategory, merchantKey } from './categorize.js';
 import type {
   CommitImportDto,
   ImportPreviewDto,
@@ -25,9 +24,6 @@ import {
 import { parseStatement } from './parsers/parse-statement.js';
 import { type ParsedStatement, StatementParseError } from './parsers/statement.types.js';
 
-/** Quantos lançamentos categorizados do histórico alimentam a sugestão de categoria. */
-const HISTORY_SIZE = 3000;
-
 function validation(field: string, message: string): AppException {
   return new AppException(ErrorCode.VALIDATION_ERROR, { details: [{ field, message }] });
 }
@@ -37,6 +33,7 @@ export class ImportsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly transactions: TransactionsService,
+    private readonly categories: CategorySuggesterService,
   ) {}
 
   /** Lê o extrato e devolve as linhas classificadas, sem gravar nada. */
@@ -69,7 +66,7 @@ export class ImportsService {
     const signsInverted = autoInvert(target.kind, parsed) !== (dto.invertSigns ?? false);
     const [existing, suggest] = await Promise.all([
       this.existingEntries(userId, target, parsed),
-      this.categorySuggester(userId),
+      this.categories.forUser(userId),
     ]);
     const rows = buildPreview({
       targetKind: target.kind,
@@ -168,46 +165,5 @@ export class ImportsService {
         externalId: t.externalId,
       };
     });
-  }
-
-  /**
-   * Sugestão de categoria: primeiro o que o próprio usuário usou por último para o mesmo
-   * estabelecimento; senão, palavra-chave → categoria padrão com esse nome, se ela existir.
-   */
-  private async categorySuggester(
-    userId: string,
-  ): Promise<(description: string, type: 'INCOME' | 'EXPENSE') => string | null> {
-    const [history, categories] = await Promise.all([
-      this.prisma.transaction.findMany({
-        where: {
-          userId,
-          deletedAt: null,
-          categoryId: { not: null },
-          type: { in: ['INCOME', 'EXPENSE'] },
-          category: { deletedAt: null },
-        },
-        select: { description: true, type: true, categoryId: true },
-        orderBy: [{ date: 'desc' }, { createdAt: 'desc' }],
-        take: HISTORY_SIZE,
-      }),
-      this.prisma.category.findMany({
-        where: { userId, deletedAt: null, parentId: null },
-        select: { id: true, name: true, type: true },
-      }),
-    ]);
-
-    const learned = new Map<string, string>();
-    for (const t of history) {
-      const key = `${t.type}|${merchantKey(t.description)}`;
-      if (!learned.has(key) && t.categoryId) learned.set(key, t.categoryId);
-    }
-    const byName = new Map(categories.map((c) => [`${c.type}|${normalizeSearch(c.name)}`, c.id]));
-
-    return (description, type) => {
-      const own = learned.get(`${type}|${merchantKey(description)}`);
-      if (own) return own;
-      const name = keywordCategory(description, type);
-      return name ? (byName.get(`${type}|${normalizeSearch(name)}`) ?? null) : null;
-    };
   }
 }

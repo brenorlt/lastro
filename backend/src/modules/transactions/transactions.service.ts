@@ -15,6 +15,7 @@ import { PrismaService } from '../../database/prisma.service.js';
 import type { Prisma } from '../../generated/prisma/client.js';
 import type { CategoryType } from '../../generated/prisma/enums.js';
 import { BudgetsService } from '../budgets/budgets.service.js';
+import { CategorySuggesterService } from '../categories/category-suggester.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { type CardCycle, invoiceFor } from '../cards/invoice.calc.js';
 import { applyInvoiceDelta, ensureInvoice, invoiceDelta } from '../cards/invoice-writer.js';
@@ -82,6 +83,7 @@ export class TransactionsService {
     private readonly recurrence: RecurrenceService,
     private readonly budgets: BudgetsService,
     private readonly notifications: NotificationsService,
+    private readonly categorySuggester: CategorySuggesterService,
   ) {}
 
   /** Aviso opcional de novo lançamento (pref newTransactions, desligada por padrão). */
@@ -189,9 +191,11 @@ export class TransactionsService {
       dto.accountId,
       dto.creditCardId,
     );
+    // Sem categoria escolhida, categoriza automaticamente pelo histórico/palavra-chave (pode ficar null).
     const categoryId = dto.categoryId
       ? await this.resolveCategory(userId, dto.categoryId, dto.type)
-      : null;
+      : await this.categorySuggester.suggest(userId, dto.description, dto.type);
+    const categoryAuto = !dto.categoryId && categoryId !== null;
 
     const base = {
       userId,
@@ -203,6 +207,7 @@ export class TransactionsService {
       creditCardId: card?.id ?? null,
       card,
       categoryId,
+      categoryAuto,
     };
 
     const ids = await this.prisma.$transaction(async (tx) => {
@@ -262,6 +267,7 @@ export class TransactionsService {
             accountId,
             creditCardId: card?.id ?? null,
             categoryId,
+            categoryAuto,
             frequency,
             interval,
             startDate: toDbDate(dto.date),
@@ -434,6 +440,7 @@ export class TransactionsService {
         creditCardId: card?.id ?? null,
         card,
         categoryId: source.categoryId,
+        categoryAuto: source.categoryAuto,
         tagIds: source.tags.map((t) => t.tag.id),
       }),
     );
@@ -549,6 +556,8 @@ export class TransactionsService {
           dto.accountId !== undefined || dto.fromAccountId !== undefined ? accountId : undefined,
         transferAccountId: dto.toAccountId !== undefined ? transferAccountId : undefined,
         categoryId: dto.categoryId !== undefined ? categoryId : undefined,
+        // Informar a categoria na edição (mesmo a sugerida) é escolha do usuário.
+        categoryAuto: dto.categoryId !== undefined ? false : undefined,
       };
 
       const deltas: Map<string, Prisma.Decimal>[] = [];
@@ -609,6 +618,7 @@ export class TransactionsService {
             creditCardId: next.creditCardId,
             invoiceId: next.invoiceId,
             categoryId: shared.categoryId,
+            categoryAuto: shared.categoryAuto,
           },
         });
         if (tagIds) {
@@ -644,6 +654,7 @@ export class TransactionsService {
             accountId: switchToCard ? null : (shared.accountId ?? undefined),
             creditCardId: switchToCard ? dto.creditCardId : switchToAccount ? null : undefined,
             categoryId: shared.categoryId,
+            categoryAuto: shared.categoryAuto,
           },
         });
       }
@@ -769,6 +780,7 @@ export class TransactionsService {
       card?: CardRef | null;
       invoiceId?: string | null;
       categoryId: string | null;
+      categoryAuto?: boolean;
       installmentGroupId?: string;
       installmentNumber?: number;
       installmentTotal?: number;

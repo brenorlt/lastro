@@ -36,6 +36,7 @@ export function toTransactionDto(row: TransactionWithRelations): TransactionDto 
     account: row.account,
     transferAccount: row.transferAccount,
     category: row.category,
+    categoryAuto: row.category !== null && row.categoryAuto,
     tags: row.tags.map((t) => t.tag).sort((a, b) => collator.compare(a.name, b.name)),
     creditCard: row.creditCard,
     invoice: row.invoice

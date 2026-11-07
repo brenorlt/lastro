@@ -74,7 +74,9 @@ describe('Budgets, goals, emergency fund (e2e)', () => {
           type: 'EXPENSE',
           amount,
           date,
-          description: 'Gasto',
+          // Sem categoria, uma descrição que não casa com nenhuma outra (nem com palavra-chave)
+          // para não ser categorizada automaticamente.
+          description: categoryId ? 'Gasto' : 'Avulso',
           accountId: account,
           categoryId,
         })

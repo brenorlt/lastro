@@ -1,8 +1,11 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { z } from "zod";
 import { toast } from "@/components/ui/toaster";
+import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { api } from "@/services/api-client";
-import type { Category, CategoryInput, CategoryType } from "@/types/finance";
+import type { Category, CategoryInput, CategoryType, EntityRef } from "@/types/finance";
+
+export type SuggestedCategory = EntityRef & { parentId: string | null };
 
 export const categoryKeys = {
   all: ["categories"] as const,
@@ -16,7 +19,26 @@ export const categoriesApi = {
   remove: (id: string, reassignTo?: string) =>
     api.delete(`/categories/${id}${reassignTo ? `?reassignTo=${encodeURIComponent(reassignTo)}` : ""}`),
   restoreDefaults: () => api.post<Category[]>("/categories/restore-defaults"),
+  suggest: (description: string, type: CategoryType) =>
+    api.get<{ category: SuggestedCategory | null }>("/categories/suggest", { query: { description, type } }),
 };
+
+/**
+ * Categoria que o backend aplicaria se o lançamento fosse salvo sem categoria, para mostrar no
+ * formulário enquanto o usuário digita a descrição.
+ */
+export function useCategorySuggestion(description: string, type: CategoryType, enabled: boolean): SuggestedCategory | null {
+  const q = useDebouncedValue(description.trim().slice(0, 120), 350);
+  const active = enabled && q.length >= 2;
+  const { data } = useQuery({
+    queryKey: ["categories", "suggest", type, q],
+    queryFn: async () => (await categoriesApi.suggest(q, type)).data.category,
+    enabled: active,
+    staleTime: 60_000,
+    placeholderData: keepPreviousData,
+  });
+  return active ? (data ?? null) : null;
+}
 
 export function useCategories(type: CategoryType) {
   return useQuery({ queryKey: categoryKeys.list(type), queryFn: async () => (await categoriesApi.list(type)).data });
