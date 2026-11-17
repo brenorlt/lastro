@@ -29,8 +29,8 @@ export const TOUR_STEPS: TourStep[] = [
   {
     id: "stats",
     target: "stats",
-    title: "Os números do mês",
-    body: "Saldo disponível, receitas, despesas, investimentos, reserva e compromissos. O ícone ⓘ de cada indicador explica como ele é calculado.",
+    title: "Onde está o seu dinheiro",
+    body: "Saldo em contas, investimentos, reserva e o que vence nos próximos 30 dias. O ícone ⓘ de cada indicador explica como ele é calculado.",
     placement: "top",
   },
   {

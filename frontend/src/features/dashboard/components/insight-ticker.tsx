@@ -102,7 +102,19 @@ export const TICKER_PAGE_SIZE = 4;
  * próprios lançamentos e destaques de mercado. O grupo troca sozinho, com os cards deslizando em
  * cascata; pausa enquanto o mouse ou o foco estão na seção e não gira com movimento reduzido.
  */
-export function InsightTicker({ personal, market }: { personal: DashboardInsight[]; market: MarketInsight[] }) {
+export function InsightTicker({
+  personal,
+  market,
+  title = "Insights",
+  subtitle = "seu mês e o mercado agora",
+  className = "mb-8",
+}: {
+  personal: DashboardInsight[];
+  market: MarketInsight[];
+  title?: string;
+  subtitle?: string;
+  className?: string;
+}) {
   const items = tickerItems(personal, market);
   const reducedMotion = usePrefersReducedMotion();
   const [page, setPage] = useState(0);
@@ -136,8 +148,8 @@ export function InsightTicker({ personal, market }: { personal: DashboardInsight
   return (
     <section
       aria-roledescription="carrossel"
-      aria-label="Insights"
-      className="mb-8"
+      aria-label={title}
+      className={className}
       onMouseEnter={() => setHovering(true)}
       onMouseLeave={() => setHovering(false)}
       onFocus={() => setHovering(true)}
@@ -147,8 +159,8 @@ export function InsightTicker({ personal, market }: { personal: DashboardInsight
     >
       <div className="mb-3 flex items-center justify-between gap-3">
         <div className="flex items-center gap-2">
-          <h2 className="text-sm font-semibold text-ink">Insights</h2>
-          <span className="text-xs text-ink-3">seu mês e o mercado agora</span>
+          <h2 className="text-sm font-semibold text-ink">{title}</h2>
+          <span className="text-xs text-ink-3">{subtitle}</span>
         </div>
         {pages > 1 && (
           <div className="flex items-center gap-2">

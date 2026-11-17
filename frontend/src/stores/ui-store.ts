@@ -6,6 +6,9 @@ interface UiState {
   privacyMode: boolean;
   sidebarCollapsed: boolean;
   commandOpen: boolean;
+  /** Pessoa fechou o card "Primeiros passos" do painel. */
+  setupDismissed: boolean;
+  dismissSetup: () => void;
   togglePrivacy: () => void;
   toggleSidebar: () => void;
   setCommandOpen: (open: boolean) => void;
@@ -17,6 +20,8 @@ export const useUiStore = create<UiState>()(
       privacyMode: false,
       sidebarCollapsed: false,
       commandOpen: false,
+      setupDismissed: false,
+      dismissSetup: () => set({ setupDismissed: true }),
       togglePrivacy: () => set((s) => ({ privacyMode: !s.privacyMode })),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setCommandOpen: (commandOpen) => set({ commandOpen }),
@@ -24,7 +29,7 @@ export const useUiStore = create<UiState>()(
     {
       name: "lastro-ui",
       storage: createJSONStorage(() => window.localStorage),
-      partialize: ({ privacyMode, sidebarCollapsed }) => ({ privacyMode, sidebarCollapsed }),
+      partialize: ({ privacyMode, sidebarCollapsed, setupDismissed }) => ({ privacyMode, sidebarCollapsed, setupDismissed }),
       // Reidratado no AppShell após montar, evitando divergência de hidratação.
       skipHydration: true,
     },

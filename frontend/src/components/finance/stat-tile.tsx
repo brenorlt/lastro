@@ -23,7 +23,7 @@ interface StatTileProps {
 export function StatTile({ label, value, icon: Icon, explainer, footer, flow, className }: StatTileProps) {
   const hidden = useUiStore((s) => s.privacyMode);
   return (
-    <Card className={cn("flex min-w-0 flex-col gap-3 p-5", className)}>
+    <Card className={cn("flex min-w-0 flex-col gap-3 p-4 sm:p-5", className)}>
       <div className="flex items-center gap-2 text-xs text-ink-2">
         {Icon && <Icon className="size-4 text-ink-3" strokeWidth={1.75} aria-hidden />}
         <span>{label}</span>
@@ -39,7 +39,7 @@ export function StatTile({ label, value, icon: Icon, explainer, footer, flow, cl
         value={value}
         flow={flow}
         hidden={hidden}
-        className="whitespace-normal break-words text-xl font-semibold tracking-tight text-ink sm:text-2xl"
+        className="whitespace-normal break-words text-lg font-semibold tracking-tight text-ink sm:text-2xl"
       />
       {footer && <div className="mt-auto">{footer}</div>}
     </Card>
