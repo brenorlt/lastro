@@ -27,7 +27,8 @@ export function SessionGate({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     if (status === "anonymous") {
-      router.replace(`/entrar?next=${encodeURIComponent(pathname)}`);
+      // Mantém a query (ex.: parâmetros OAuth de /conectar) para voltar ao mesmo ponto após o login.
+      router.replace(`/entrar?next=${encodeURIComponent(pathname + window.location.search)}`);
     }
   }, [status, router, pathname]);
 

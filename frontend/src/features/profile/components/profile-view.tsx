@@ -3,6 +3,7 @@
 import { PageHeader } from "@/components/layout/page-header";
 import { Separator } from "@/components/ui/primitives";
 import { useAuthStore } from "@/stores/auth-store";
+import { ConnectedAppsSection } from "@/features/connect/components/connected-apps-section";
 import { BillingSection } from "./billing-section";
 import { DangerZone } from "./danger-zone";
 import { NotificationsSection } from "./notifications-section";
@@ -15,6 +16,7 @@ const SECTIONS = [
   ["preferencias", "Preferências"],
   ["cobranca", "Plano e cobrança"],
   ["notificacoes", "Notificações"],
+  ["apps", "Apps conectados"],
   ["seguranca", "Segurança"],
   ["excluir", "Excluir conta"],
 ] as const;
@@ -46,6 +48,8 @@ export function ProfileView() {
         <BillingSection />
         <Separator />
         <NotificationsSection user={user} />
+        <Separator />
+        <ConnectedAppsSection />
         <Separator />
         <SecuritySection />
         <Separator />

@@ -18,7 +18,8 @@ import { useUiStore } from "@/stores/ui-store";
 import { useAccounts } from "@/features/accounts/api";
 import { useBudgets } from "@/features/budgets/api";
 import { useDashboard, useMarketInsights } from "../api";
-import { AttentionCard, attentionItems, GettingStarted, MonthSummary, setupProgress, type SetupState } from "./dashboard-panels";
+import { useConnections } from "@/features/connect/api";
+import { AttentionCard, attentionItems, ClaudePromo, GettingStarted, MonthSummary, setupProgress, type SetupState } from "./dashboard-panels";
 import { CashflowChart, GoalsCard, InsightsCard, NetWorthChart, RecentCard, SpendingChart, UpcomingCard } from "./dashboard-sections";
 import { InsightTicker } from "./insight-ticker";
 
@@ -50,6 +51,9 @@ export function DashboardView() {
   const hidden = useUiStore((s) => s.privacyMode);
   const setupDismissed = useUiStore((s) => s.setupDismissed);
   const dismissSetup = useUiStore((s) => s.dismissSetup);
+  const claudePromoDismissed = useUiStore((s) => s.claudePromoDismissed);
+  const dismissClaudePromo = useUiStore((s) => s.dismissClaudePromo);
+  const connections = useConnections();
   const [month, setMonth] = useState<MonthRef>(currentMonth);
   const query = useDashboard(ym(month));
   const market = useMarketInsights();
@@ -72,6 +76,8 @@ export function DashboardView() {
   // Sem conta e sem lançamento o painel só teria zeros: mostra o caminho em vez de gráficos vazios.
   const empty = setup !== null && !setup.hasAccount && !setup.hasTransactions;
   const showSetup = setup !== null && !setupProgress(setup).complete && (empty || !setupDismissed);
+  // Um convite por vez: o do Claude só aparece quando os primeiros passos já não estão na tela.
+  const showClaudePromo = setup !== null && !empty && !showSetup && !claudePromoDismissed && connections.data?.length === 0;
 
   return (
     <>
@@ -101,6 +107,7 @@ export function DashboardView() {
       )}
 
       {showSetup && <GettingStarted state={setup} onDismiss={empty ? undefined : dismissSetup} />}
+      {showClaudePromo && <ClaudePromo onDismiss={dismissClaudePromo} />}
 
       {query.isPending ? (
         <DashboardSkeleton />

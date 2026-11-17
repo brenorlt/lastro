@@ -34,5 +34,7 @@ export const config = {
     "/perfil/:path*",
     "/onboarding/:path*",
     "/admin/:path*",
+    "/conectar/:path*",
+    "/conectar-claude/:path*",
   ],
 };

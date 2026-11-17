@@ -1,9 +1,10 @@
 "use client";
 
-import { ArrowRight, Check, CircleCheck, CalendarClock, Gauge, Landmark, ReceiptText, Shield, Target, TriangleAlert, X, type LucideIcon } from "lucide-react";
+import { ArrowRight, Check, CircleCheck, CalendarClock, Gauge, Landmark, MessagesSquare, ReceiptText, Shield, Target, TriangleAlert, X, type LucideIcon } from "lucide-react";
 import Link from "next/link";
 import { Amount } from "@/components/finance/amount";
 import { IconButton } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, CardHeader } from "@/components/ui/primitives";
 import { cn } from "@/lib/cn";
 import { parseISODate, todayISO } from "@/lib/dates";
@@ -261,6 +262,32 @@ export function GettingStarted({ state, onDismiss }: { state: SetupState; onDism
           );
         })}
       </ol>
+    </Card>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+/* Convite para o conector do Claude: some quando a pessoa conecta ou fecha. */
+
+export function ClaudePromo({ onDismiss }: { onDismiss: () => void }) {
+  return (
+    <Card className="relative mb-8 flex flex-col gap-4 overflow-hidden p-5 pr-12 sm:flex-row sm:items-center sm:p-6 sm:pr-14">
+      <span aria-hidden className="bg-brass absolute inset-y-0 left-0 w-1" />
+      <span className="flex size-10 shrink-0 items-center justify-center rounded-md bg-brass-soft text-brass">
+        <MessagesSquare className="size-5" aria-hidden />
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium text-ink">Novo: use o Lastro conversando com o Claude</p>
+        <p className="text-sm text-ink-2">
+          “Quanto gastei com delivery este mês?” “Lança R$ 48,90 de iFood no Nubank.” Conecte em 2 minutos.
+        </p>
+      </div>
+      <Link href="/conectar-claude" className={buttonVariants({ variant: "secondary", className: "shrink-0" })}>
+        Ver como conectar <ArrowRight aria-hidden />
+      </Link>
+      <IconButton label="Fechar convite" size="icon-sm" onClick={onDismiss} className="absolute right-3 top-3">
+        <X />
+      </IconButton>
     </Card>
   );
 }

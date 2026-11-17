@@ -7,6 +7,7 @@ import {
   Landmark,
   LayoutGrid,
   LineChart,
+  MessagesSquare,
   PiggyBank,
   Scale,
   Shapes,
@@ -37,6 +38,7 @@ export type RouteKey =
   | "netWorth"
   | "reports"
   | "notifications"
+  | "claude"
   | "profile";
 
 export type MobileTab = "home" | "transactions" | "plan" | "wealth" | "reports";
@@ -199,6 +201,21 @@ export const NAV_GROUPS: NavGroup[] = [
         purpose: "Fluxo de caixa, gastos por categoria e evolução — exportáveis em CSV e PDF.",
         phase: 9,
         tab: "reports",
+      },
+    ],
+  },
+  {
+    label: "Integrações",
+    items: [
+      {
+        key: "claude",
+        label: "Claude",
+        href: "/conectar-claude",
+        icon: MessagesSquare,
+        purpose: "Use o Lastro conversando com o Claude: pergunte, registre gastos e acompanhe metas.",
+        phase: 10,
+        tab: "home",
+        keywords: ["claude", "ia", "inteligência artificial", "assistente", "chat", "conector", "mcp", "conectar", "integração"],
       },
     ],
   },
