@@ -7,6 +7,16 @@ export const TRIAL_DAYS = 7;
 /** Texto dos CTAs principais: a oferta no próprio botão, não só numa legenda. */
 export const SIGNUP_CTA = `Testar grátis por ${TRIAL_DAYS} dias`;
 
+/** Preço mensal do plano único (espelha PLANS e o backend). */
+export const MONTHLY_PRICE = 25;
+
+/** "R$ 0,83": o preço quebrado por dia, para ancorar o valor perto do botão. */
+export const PRICE_PER_DAY = (MONTHLY_PRICE / 30).toLocaleString("pt-BR", {
+  style: "currency",
+  currency: "BRL",
+  maximumFractionDigits: 2,
+});
+
 export interface Plan {
   key: "completo";
   name: string;
@@ -25,7 +35,7 @@ export const PLANS: Plan[] = [
     key: "completo",
     name: "Lastro Completo",
     tagline: "Todos os recursos, um preço único.",
-    monthlyPrice: 25,
+    monthlyPrice: MONTHLY_PRICE,
     featured: true,
     features: [
       "Contas, cartões e categorias ilimitados",
@@ -47,7 +57,30 @@ export const PLANS: Plan[] = [
   },
 ];
 
-export interface FaqItem { question: string; answer: string }
+/** Bancos da faixa "importe o extrato de": só os logos leves de /public/banks (os de 20–90 KB ficam de fora). */
+export const STRIP_BANKS = [
+  { id: "nubank", name: "Nubank" },
+  { id: "itau", name: "Itaú" },
+  { id: "banco-do-brasil", name: "Banco do Brasil" },
+  { id: "bradesco", name: "Bradesco" },
+  { id: "caixa", name: "Caixa" },
+  { id: "santander", name: "Santander" },
+  { id: "inter", name: "Inter" },
+  { id: "c6", name: "C6 Bank" },
+  { id: "btg", name: "BTG Pactual" },
+  { id: "xp", name: "XP" },
+  { id: "picpay", name: "PicPay" },
+  { id: "mercado-pago", name: "Mercado Pago" },
+  { id: "pagbank", name: "PagBank" },
+  { id: "neon", name: "Neon" },
+  { id: "sicoob", name: "Sicoob" },
+  { id: "sicredi", name: "Sicredi" },
+] as const;
+
+export interface FaqItem {
+  question: string;
+  answer: string;
+}
 
 export const FAQS: FaqItem[] = [
   {
@@ -96,11 +129,32 @@ export const FAQS: FaqItem[] = [
   },
 ];
 
-export interface SecurityPoint { icon: LucideIcon; title: string; description: string }
+export interface SecurityPoint {
+  icon: LucideIcon;
+  title: string;
+  description: string;
+}
 
 export const SECURITY_POINTS: SecurityPoint[] = [
-  { icon: Lock, title: "Comunicação criptografada", description: "Toda troca de dados entre você e o Lastro acontece por conexão criptografada (HTTPS/TLS)." },
-  { icon: Fingerprint, title: "Sessões sob seu controle", description: "Veja todos os dispositivos conectados e encerre qualquer sessão remotamente, a qualquer momento." },
-  { icon: ShieldCheck, title: "Senhas nunca em texto simples", description: "Sua senha é protegida com hash criptográfico (argon2id) — nem a nossa equipe tem acesso a ela." },
-  { icon: Bell, title: "Proteção contra tentativas", description: "Várias senhas erradas seguidas bloqueiam o acesso temporariamente, e toda atividade de segurança da conta é registrada." },
+  {
+    icon: Lock,
+    title: "Comunicação criptografada",
+    description: "Toda troca de dados entre você e o Lastro acontece por conexão criptografada (HTTPS/TLS).",
+  },
+  {
+    icon: Fingerprint,
+    title: "Sessões sob seu controle",
+    description: "Veja todos os dispositivos conectados e encerre qualquer sessão remotamente, a qualquer momento.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Senhas nunca em texto simples",
+    description: "Sua senha é protegida com hash criptográfico (argon2id) — nem a nossa equipe tem acesso a ela.",
+  },
+  {
+    icon: Bell,
+    title: "Proteção contra tentativas",
+    description:
+      "Várias senhas erradas seguidas bloqueiam o acesso temporariamente, e toda atividade de segurança da conta é registrada.",
+  },
 ];

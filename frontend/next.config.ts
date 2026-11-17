@@ -30,6 +30,11 @@ const nextConfig: NextConfig = {
   output: "standalone",
   poweredByHeader: false,
   reactStrictMode: true,
+  experimental: {
+    // O pacote guarda-chuva "radix-ui" reexporta todos os primitivos: sem isto, importar só o
+    // Slot (no Button) levava Accordion, Dialog, DropdownMenu etc. para qualquer página com botão.
+    optimizePackageImports: ["radix-ui"],
+  },
   // /api/* é atendido por src/app/api/[...path]/route.ts (proxy manual pro backend) — não por
   // um rewrite: o rewrite embutido do Next funde múltiplos Set-Cookie numa resposta só.
   async headers() {

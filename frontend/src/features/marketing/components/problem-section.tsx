@@ -1,37 +1,52 @@
-import { CircleDollarSign, Coins, ListX, ShieldOff, Target, TrendingDown } from "lucide-react";
-import type { LucideIcon } from "lucide-react";
+import { ArrowDown } from "lucide-react";
 
-const PROBLEMS: { icon: LucideIcon; title: string; description: string }[] = [
-  { icon: ListX, title: "Não saber para onde o dinheiro vai", description: "O extrato passa, o cartão fecha, e o motivo de o saldo não sobrar continua um mistério." },
-  { icon: TrendingDown, title: "Falta de planejamento", description: "Decisões financeiras tomadas no impulso, sem uma visão de médio e longo prazo." },
-  { icon: Target, title: "Metas que nunca saem do papel", description: "Objetivos anotados, mas sem número, prazo ou plano — fáceis de adiar indefinidamente." },
-  { icon: Coins, title: "Investimentos desorganizados", description: "Um pouco em cada corretora, sem visão consolidada de quanto realmente se tem." },
-  { icon: ShieldOff, title: "Falta de reserva", description: "Um imprevisto e o plano inteiro desmonta, porque não há uma rede de proteção definida." },
-  { icon: CircleDollarSign, title: "Falta de visão patrimonial", description: "Ativos, dívidas e investimentos espalhados, sem um retrato único de quanto se é dono." },
+/**
+ * Frases na voz de quem ainda não tem clareza (não são depoimentos de clientes):
+ * o vocabulário de quem compra converte mais do que o do marketing.
+ */
+const THOUGHTS = [
+  { quote: "Eu tinha uma planilha. Durou até março.", tag: "Planilha abandonada" },
+  { quote: "Sei quanto ganho. Não faço ideia de quanto gasto.", tag: "Dinheiro sem rastro" },
+  { quote: "A fatura sempre vem maior do que eu esperava.", tag: "Cartão no escuro" },
+  { quote: "Tenho dinheiro em quatro lugares e não sei quanto tenho no total.", tag: "Patrimônio espalhado" },
+  { quote: "Quero viajar, trocar de carro… mas quanto eu guardo por mês?", tag: "Metas sem número" },
+  { quote: "Se eu perder o emprego amanhã, aguento quantos meses?", tag: "Sem reserva" },
 ];
 
 export function ProblemSection() {
   return (
-    <section id="problema" data-section="problema" className="scroll-mt-20 py-20 sm:py-28">
+    <section id="problema" data-section="problema" className="defer-render scroll-mt-20 py-20 sm:py-28">
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">O problema</p>
-          <h2 className="mt-3 font-display text-3xl leading-tight tracking-[-0.02em] text-ink sm:text-4xl">
-            Planilhas abandonadas. Apps que só mostram números soltos.
+        <div className="reveal mx-auto max-w-3xl text-center">
+          <p className="text-ink-3 text-xs font-medium tracking-[0.16em] uppercase">Soa familiar?</p>
+          <h2 className="font-display text-ink mt-3 text-3xl leading-[1.1] tracking-[-0.02em] sm:text-[2.75rem]">
+            O salário cai, os boletos chegam e no dia 20 fica a pergunta:{" "}
+            <span className="text-ink-2 italic">para onde foi o dinheiro?</span>
           </h2>
-          <p className="mt-4 text-ink-2">Sinais comuns de quem ainda não tem clareza financeira — talvez você reconheça mais de um.</p>
+          <p className="text-ink-2 mt-5 sm:text-lg">
+            Não é falta de disciplina. É falta de uma visão que junte tudo. Se você já pensou alguma destas, o Lastro
+            foi feito para você.
+          </p>
         </div>
-        <ul className="mx-auto mt-14 grid max-w-4xl gap-x-8 gap-y-10 sm:grid-cols-2 lg:grid-cols-3">
-          {PROBLEMS.map((p) => (
-            <li key={p.title} className="flex flex-col items-start gap-3">
-              <span className="flex size-10 items-center justify-center rounded-md bg-surface-sunken text-ink-2">
-                <p.icon className="size-[18px]" strokeWidth={1.75} aria-hidden />
-              </span>
-              <h3 className="text-sm font-medium text-ink">{p.title}</h3>
-              <p className="text-sm text-ink-2">{p.description}</p>
+
+        <ul className="mx-auto mt-14 grid max-w-5xl gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {THOUGHTS.map((t) => (
+            <li
+              key={t.tag}
+              className="reveal bg-surface ring-line group relative flex flex-col justify-between gap-6 rounded-2xl p-6 ring-1 transition-shadow hover:shadow-md"
+            >
+              <blockquote className="font-display text-ink text-xl leading-snug tracking-[-0.01em]">
+                “{t.quote}”
+              </blockquote>
+              <span className="text-ink-3 text-2xs font-medium tracking-[0.12em] uppercase">{t.tag}</span>
             </li>
           ))}
         </ul>
+
+        <p className="reveal text-ink-2 mt-12 flex items-center justify-center gap-2 text-center text-sm">
+          <ArrowDown className="text-brass size-4" aria-hidden />
+          Cada uma dessas frases tem uma tela no Lastro que resolve.
+        </p>
       </div>
     </section>
   );

@@ -227,6 +227,8 @@ enum SecurityEventType {
   SESSION_REVOKED
   ACCOUNT_DELETED
   REFRESH_REUSE_DETECTED
+  APP_CONNECTED
+  APP_DISCONNECTED
 
   @@map("security_event_type")
 }
@@ -301,6 +303,8 @@ model User {
 
   sessions               Session[]
   oauthIdentities        OAuthIdentity[]
+  appConnections         AppConnection[]
+  appAuthorizationCodes  AppAuthorizationCode[]
   verificationTokens     VerificationToken[]
   accounts               Account[]
   creditCards            CreditCard[]
@@ -981,4 +985,87 @@ model FinancialSnapshot {
 
   @@unique([userId, date])
   @@map("financial_snapshots")
+}
+
+// ---------------------------------------------------------------------------
+// Apps conectados (OAuth 2.1 em que o Lastro é o servidor de autorização).
+// Hoje: clientes MCP como o Claude acessando /api/mcp em nome do usuário.
+// Tokens e códigos são opacos e guardados só como SHA-256.
+// ---------------------------------------------------------------------------
+
+enum AppTokenKind {
+  ACCESS
+  REFRESH
+
+  @@map("app_token_kind")
+}
+
+/** Cliente registrado dinamicamente (RFC 7591). Público: sem segredo, sempre com PKCE. */
+model AppClient {
+  id           String   @id @default(uuid()) @db.Uuid
+  name         String   @db.VarChar(120)
+  redirectUris String[] @map("redirect_uris")
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  connections        AppConnection[]
+  authorizationCodes AppAuthorizationCode[]
+
+  @@map("app_clients")
+}
+
+/** Código de autorização de uso único (10 min), amarrado ao PKCE S256 e ao redirect_uri. */
+model AppAuthorizationCode {
+  id            String    @id @default(uuid()) @db.Uuid
+  codeHash      String    @unique @map("code_hash")
+  clientId      String    @map("client_id") @db.Uuid
+  userId        String    @map("user_id") @db.Uuid
+  redirectUri   String    @map("redirect_uri")
+  codeChallenge String    @map("code_challenge") @db.VarChar(128)
+  scope         String    @db.VarChar(255)
+  resource      String?   @db.VarChar(512)
+  expiresAt     DateTime  @map("expires_at") @db.Timestamptz(3)
+  usedAt        DateTime? @map("used_at") @db.Timestamptz(3)
+  createdAt     DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  client AppClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  user   User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([expiresAt])
+  @@map("app_authorization_codes")
+}
+
+/** Uma autorização (usuário × app). Revogar desliga todos os tokens dela de uma vez. */
+model AppConnection {
+  id         String    @id @default(uuid()) @db.Uuid
+  userId     String    @map("user_id") @db.Uuid
+  clientId   String    @map("client_id") @db.Uuid
+  scope      String    @db.VarChar(255)
+  lastUsedAt DateTime? @map("last_used_at") @db.Timestamptz(3)
+  revokedAt  DateTime? @map("revoked_at") @db.Timestamptz(3)
+  createdAt  DateTime  @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  user   User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  client AppClient  @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  tokens AppToken[]
+
+  @@index([userId, revokedAt])
+  @@map("app_connections")
+}
+
+/** Access (1 h) e refresh (60 dias, rotativo) de uma conexão. */
+model AppToken {
+  id           String       @id @default(uuid()) @db.Uuid
+  connectionId String       @map("connection_id") @db.Uuid
+  kind         AppTokenKind
+  tokenHash    String       @unique @map("token_hash")
+  expiresAt    DateTime     @map("expires_at") @db.Timestamptz(3)
+  // Refresh já trocado por um novo par: reapresentá-lo indica vazamento e revoga a conexão.
+  usedAt       DateTime?    @map("used_at") @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(3)
+
+  connection AppConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+
+  @@index([connectionId])
+  @@index([expiresAt])
+  @@map("app_tokens")
 }

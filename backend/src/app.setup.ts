@@ -21,6 +21,26 @@ const helmet = createRequire(import.meta.url)('helmet') as Helmet;
 
 export const GLOBAL_PREFIX = 'api';
 
+function openCors(req: IncomingMessage, res: ServerResponse, next: () => void): void {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader(
+    'Access-Control-Expose-Headers',
+    'WWW-Authenticate, Mcp-Session-Id, Mcp-Protocol-Version',
+  );
+  if (req.method === 'OPTIONS') {
+    res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+    res.setHeader(
+      'Access-Control-Allow-Headers',
+      'Authorization, Content-Type, Mcp-Protocol-Version, Mcp-Session-Id',
+    );
+    res.setHeader('Access-Control-Max-Age', '600');
+    res.statusCode = 204;
+    res.end();
+    return;
+  }
+  next();
+}
+
 /**
  * Configuração HTTP compartilhada entre main.ts e os testes e2e
  * (pipes, guards, filtros e interceptors globais vivem no AppModule).
@@ -36,6 +56,20 @@ export function configureApp(app: NestExpressApplication): void {
   app.use(cookieParser());
   app.useBodyParser('json', { limit: config.get('BODY_LIMIT') });
   app.useBodyParser('urlencoded', { limit: config.get('BODY_LIMIT'), extended: true });
+
+  // Descoberta OAuth, token e /mcp são chamados por clientes de qualquer origem (Claude,
+  // inspetores MCP): CORS aberto, sem credenciais. Registrado antes do CORS restrito do app.
+  app.use(
+    [
+      '/api/oauth/metadata',
+      '/api/oauth/protected-resource',
+      '/api/oauth/register',
+      '/api/oauth/token',
+      '/api/oauth/revoke',
+      '/api/mcp',
+    ],
+    openCors,
+  );
 
   app.enableCors({
     origin: config.get('CORS_ORIGINS'),

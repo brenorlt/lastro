@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import Script from "next/script";
 import { useEffect, useRef, useSyncExternalStore } from "react";
-import { Button } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import {
   type Consent,
   flushPendingEvents,
@@ -72,22 +72,27 @@ function ConsentBanner() {
     <div
       role="dialog"
       aria-label="Cookies de análise"
-      className="fixed inset-x-4 bottom-24 z-50 rounded-xl bg-surface p-4 shadow-lg ring-1 ring-line animate-rise lg:inset-x-auto lg:bottom-6 lg:right-6 lg:max-w-sm"
+      className="follows-site-theme text-ink bg-surface ring-line animate-rise fixed inset-x-4 bottom-24 z-50 rounded-xl p-4 shadow-lg ring-1 lg:inset-x-auto lg:right-6 lg:bottom-6 lg:max-w-sm"
     >
-      <p className="text-sm font-medium text-ink">Podemos medir como você usa o Lastro?</p>
-      <p className="mt-1 text-xs text-ink-2">
-        Usamos o Google Analytics só para saber quais telas e recursos são usados. Nenhum valor, lançamento ou dado pessoal é enviado.{" "}
+      <p className="text-ink text-sm font-medium">Podemos medir como você usa o Lastro?</p>
+      <p className="text-ink-2 mt-1 text-xs">
+        Usamos o Google Analytics só para saber quais telas e recursos são usados. Nenhum valor, lançamento ou dado
+        pessoal é enviado.{" "}
         <Link href="/privacidade" className="text-accent underline-offset-4 hover:underline">
           Saiba mais
         </Link>
       </p>
       <div className="mt-3 flex justify-end gap-2">
-        <Button variant="secondary" size="sm" onClick={() => saveConsent("denied")}>
+        <button
+          type="button"
+          className={buttonVariants({ variant: "secondary", size: "sm" })}
+          onClick={() => saveConsent("denied")}
+        >
           Recusar
-        </Button>
-        <Button size="sm" onClick={() => saveConsent("granted")}>
+        </button>
+        <button type="button" className={buttonVariants({ size: "sm" })} onClick={() => saveConsent("granted")}>
           Aceitar
-        </Button>
+        </button>
       </div>
     </div>
   );

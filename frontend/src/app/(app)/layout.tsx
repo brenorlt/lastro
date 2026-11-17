@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import type { ReactNode } from "react";
+import { Providers } from "@/app/providers";
 import { AppShell } from "@/components/layout/app-shell";
 import { SessionGate } from "@/features/auth/components/session-gate";
 import { BillingGate } from "@/features/billing/components/billing-gate";
@@ -10,10 +11,12 @@ export const metadata: Metadata = { robots: { index: false, follow: false } };
 
 export default function AppLayout({ children }: { children: ReactNode }) {
   return (
-    <SessionGate>
-      <BillingGate>
-        <AppShell>{children}</AppShell>
-      </BillingGate>
-    </SessionGate>
+    <Providers>
+      <SessionGate>
+        <BillingGate>
+          <AppShell>{children}</AppShell>
+        </BillingGate>
+      </SessionGate>
+    </Providers>
   );
 }

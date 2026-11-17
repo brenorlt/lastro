@@ -65,8 +65,19 @@ export function MarketingAnalytics() {
         rememberSignupCta(click.params.cta_location);
       track(click.event, click.params);
     };
+    // FAQ em <details>: "toggle" não borbulha, então escuta na captura. O value é a própria
+    // pergunta — as dúvidas mais abertas mostram as objeções de quem não assina.
+    const onToggle = (e: Event) => {
+      const el = e.target;
+      if (el instanceof HTMLDetailsElement && el.open && el.dataset.faq)
+        track("faq_open", { faq_question: el.dataset.faq });
+    };
     document.addEventListener("click", onClick);
-    return () => document.removeEventListener("click", onClick);
+    document.addEventListener("toggle", onToggle, true);
+    return () => {
+      document.removeEventListener("click", onClick);
+      document.removeEventListener("toggle", onToggle, true);
+    };
   }, []);
 
   return null;

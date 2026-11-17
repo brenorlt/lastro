@@ -1,23 +1,25 @@
 "use client";
 
-import { ArrowDownLeft, ArrowRight, ArrowUpRight, CalendarClock, Compass, Shield, TrendingUp, Wallet } from "lucide-react";
+import { ArrowRight, CalendarClock, Compass, Shield, TrendingUp, Wallet } from "lucide-react";
 import Link from "next/link";
-import { useState } from "react";
-import { Delta } from "@/components/finance/amount";
+import { useState, type ReactNode } from "react";
 import { NetWorthHero } from "@/components/finance/net-worth-hero";
 import { StatTile } from "@/components/finance/stat-tile";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { Card, Skeleton } from "@/components/ui/primitives";
 import { Progress } from "@/components/ui/progress";
 import { ErrorState } from "@/components/ui/states";
 import { MonthNavigator } from "@/features/transactions/components/filters-bar";
 import { cn } from "@/lib/cn";
 import { currentMonth, type MonthRef } from "@/lib/dates";
-import { formatCurrency, toNumber } from "@/lib/format";
 import { userMessage } from "@/services/api-error";
 import { useAuthStore } from "@/stores/auth-store";
 import { useUiStore } from "@/stores/ui-store";
-import { pctChange, useDashboard, useMarketInsights } from "../api";
+import { useAccounts } from "@/features/accounts/api";
+import { useBudgets } from "@/features/budgets/api";
+import { useDashboard, useMarketInsights } from "../api";
+import { useConnections } from "@/features/connect/api";
+import { AttentionCard, attentionItems, ClaudePromo, GettingStarted, MonthSummary, setupProgress, type SetupState } from "./dashboard-panels";
 import { CashflowChart, GoalsCard, InsightsCard, NetWorthChart, RecentCard, SpendingChart, UpcomingCard } from "./dashboard-sections";
 import { InsightTicker } from "./insight-ticker";
 
@@ -36,8 +38,8 @@ function DashboardSkeleton() {
         <div className="space-y-4"><Skeleton className="h-3 w-32" /><Skeleton className="h-14 w-72" /><Skeleton className="h-3 w-full max-w-xl" /></div>
         <Card className="space-y-4 p-6"><Skeleton className="h-4 w-40" />{[0, 1, 2].map((i) => <Skeleton key={i} className="h-10 w-full" />)}</Card>
       </div>
-      <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }, (_, i) => <Card key={i} className="space-y-3 p-5"><Skeleton className="h-3 w-24" /><Skeleton className="h-7 w-32" /></Card>)}
+      <div className="grid grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-4">
+        {Array.from({ length: 4 }, (_, i) => <Card key={i} className="space-y-3 p-5"><Skeleton className="h-3 w-24" /><Skeleton className="h-7 w-32" /></Card>)}
       </div>
       <Card className="p-6"><Skeleton className="h-64 w-full rounded-md" /></Card>
     </div>
@@ -47,10 +49,35 @@ function DashboardSkeleton() {
 export function DashboardView() {
   const user = useAuthStore((s) => s.user);
   const hidden = useUiStore((s) => s.privacyMode);
+  const setupDismissed = useUiStore((s) => s.setupDismissed);
+  const dismissSetup = useUiStore((s) => s.dismissSetup);
+  const claudePromoDismissed = useUiStore((s) => s.claudePromoDismissed);
+  const dismissClaudePromo = useUiStore((s) => s.dismissClaudePromo);
+  const connections = useConnections();
   const [month, setMonth] = useState<MonthRef>(currentMonth);
   const query = useDashboard(ym(month));
   const market = useMarketInsights();
+  const budgets = useBudgets(ym(month));
+  const accounts = useAccounts("ACTIVE");
   const d = query.data;
+  const isCurrentMonth = ym(month) === ym(currentMonth());
+
+  const budgetList = budgets.data?.data ?? [];
+  const setup: SetupState | null =
+    d && accounts.data && budgets.data
+      ? {
+          hasAccount: accounts.data.data.length > 0,
+          hasTransactions: d.recent.length > 0 || d.upcoming.length > 0,
+          hasBudget: budgetList.length > 0,
+          hasGoal: d.goals.length > 0,
+          hasReserve: d.emergencyFund !== null,
+        }
+      : null;
+  // Sem conta e sem lançamento o painel só teria zeros: mostra o caminho em vez de gráficos vazios.
+  const empty = setup !== null && !setup.hasAccount && !setup.hasTransactions;
+  const showSetup = setup !== null && !setupProgress(setup).complete && (empty || !setupDismissed);
+  // Um convite por vez: o do Claude só aparece quando os primeiros passos já não estão na tela.
+  const showClaudePromo = setup !== null && !empty && !showSetup && !claudePromoDismissed && connections.data?.length === 0;
 
   return (
     <>
@@ -59,12 +86,12 @@ export function DashboardView() {
           <p className="text-sm text-ink-3">{user ? greeting(user.name) : ""}</p>
           <h1 className="mt-1 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">Painel</h1>
         </div>
-        <div data-tour="month" className="self-start sm:self-auto">
-          <MonthNavigator value={month} onChange={setMonth} />
-        </div>
+        {!empty && (
+          <div data-tour="month" className="self-start sm:self-auto">
+            <MonthNavigator value={month} onChange={setMonth} />
+          </div>
+        )}
       </div>
-
-      <InsightTicker personal={d?.insights ?? []} market={market.data?.insights ?? []} />
 
       {user && !user.onboardingCompleted && (
         <Card className="mb-8 flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
@@ -79,13 +106,19 @@ export function DashboardView() {
         </Card>
       )}
 
+      {showSetup && <GettingStarted state={setup} onDismiss={empty ? undefined : dismissSetup} />}
+      {showClaudePromo && <ClaudePromo onDismiss={dismissClaudePromo} />}
+
       {query.isPending ? (
         <DashboardSkeleton />
       ) : query.isError || !d ? (
         <Card><ErrorState description={userMessage(query.error)} onRetry={() => void query.refetch()} /></Card>
+      ) : empty ? (
+        <InsightTicker personal={[]} market={market.data?.insights ?? []} title="Mercado hoje" subtitle="câmbio, cripto e bolsa" />
       ) : (
         <div className={cn("space-y-4 transition-opacity", query.isFetching && "opacity-70")}>
-          <div className="grid gap-10 pb-6 lg:grid-cols-[1.25fr_1fr] lg:items-end">
+          {/* 1. A resposta principal: quanto eu tenho e como está o mês. */}
+          <div className="grid gap-10 pb-6 lg:grid-cols-[1.25fr_1fr] lg:items-center">
             <div data-tour="net-worth">
               <NetWorthHero
                 netWorth={d.netWorth.current}
@@ -95,29 +128,15 @@ export function DashboardView() {
                 change={d.netWorth.change12m ?? undefined}
               />
             </div>
-            <div data-tour="insights">
-              <InsightsCard insights={d.insights} />
-            </div>
+            <MonthSummary flow={d.flow} hidden={hidden} isCurrentMonth={isCurrentMonth} />
           </div>
 
-          <div data-tour="stats" className="grid grid-cols-1 gap-3 xs:grid-cols-2 lg:grid-cols-3">
-            <StatTile label="Saldo disponível" value={d.cash.available} icon={Wallet} explainer="Soma das contas correntes, digitais, poupança e carteiras incluídas no patrimônio. Não inclui investimentos." />
+          {/* 2. Onde o dinheiro está. */}
+          <div data-tour="stats" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+            <StatTile label="Saldo em contas" value={d.cash.available} icon={Wallet} explainer="Soma das contas correntes, digitais, poupança e carteiras incluídas no patrimônio. Não inclui investimentos." footer={<TileLink href="/contas">Ver contas</TileLink>} />
+            <StatTile label="Investimentos" value={d.investments.total} icon={TrendingUp} explainer="Valor atual da sua carteira de investimentos." footer={<TileLink href="/investimentos">Ver carteira</TileLink>} />
             <StatTile
-              label="Receitas do mês"
-              value={d.flow.income}
-              icon={ArrowDownLeft}
-              flow="income"
-              footer={pctChange(toNumber(d.flow.income), toNumber(d.flow.previousIncome)) !== null && <Delta value={pctChange(toNumber(d.flow.income), toNumber(d.flow.previousIncome))!} />}
-            />
-            <StatTile
-              label="Despesas do mês"
-              value={d.flow.expense}
-              icon={ArrowUpRight}
-              footer={pctChange(toNumber(d.flow.expense), toNumber(d.flow.previousExpense)) !== null && <Delta value={pctChange(toNumber(d.flow.expense), toNumber(d.flow.previousExpense))!} inverse />}
-            />
-            <StatTile label="Investimentos" value={d.investments.total} icon={TrendingUp} explainer="Saldo das contas de investimento. O detalhamento por ativo chega no módulo de investimentos." />
-            <StatTile
-              label="Reserva financeira"
+              label="Reserva de emergência"
               value={d.emergencyFund?.current ?? 0}
               icon={Shield}
               explainer="Dinheiro guardado para imprevistos. O ideal é cobrir de 6 a 12 meses do seu custo de vida."
@@ -125,22 +144,33 @@ export function DashboardView() {
                 d.emergencyFund ? (
                   <div className="space-y-1.5">
                     <Progress value={d.emergencyFund.progress ?? 0} tone="brass" size="sm" label="Progresso da reserva" />
-                    <p className="num text-2xs text-ink-3">Meta: {formatCurrency(d.emergencyFund.target)} ({d.emergencyFund.targetMonths} meses)</p>
+                    <p className="num text-2xs text-ink-3">
+                      {d.emergencyFund.coverageMonths !== null ? `Cobre ${formatMonths(d.emergencyFund.coverageMonths)} de ${d.emergencyFund.targetMonths}` : `Meta: ${d.emergencyFund.targetMonths} meses`}
+                    </p>
                   </div>
                 ) : (
-                  <p className="text-2xs text-ink-3">Defina sua reserva no onboarding.</p>
+                  <TileLink href="/reserva">Configurar reserva</TileLink>
                 )
               }
             />
             <StatTile
-              label="Compromissos futuros"
+              label="A pagar em 30 dias"
               value={d.commitments.next30Days}
               icon={CalendarClock}
               explainer="Lançamentos pendentes dos próximos 30 dias mais parcelas mensais de dívidas."
-              footer={<p className="text-2xs text-ink-3">{d.commitments.pendingCount} pendente{d.commitments.pendingCount === 1 ? "" : "s"}</p>}
+              footer={<p className="text-2xs text-ink-3">{d.commitments.pendingCount} {d.commitments.pendingCount === 1 ? "lançamento pendente" : "lançamentos pendentes"}</p>}
             />
           </div>
 
+          {/* 3. O que fazer agora e o que os números dizem. */}
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <AttentionCard items={attentionItems(d, budgetList)} hidden={hidden} />
+            <div data-tour="insights" className="min-w-0">
+              <InsightsCard insights={d.insights} />
+            </div>
+          </div>
+
+          {/* 4. Tendências. */}
           <div className="grid gap-4 lg:grid-cols-3">
             <NetWorthChart data={d} />
             <SpendingChart data={d} />
@@ -151,8 +181,23 @@ export function DashboardView() {
               <RecentCard data={d} />
             </div>
           </div>
+
+          <InsightTicker personal={[]} market={market.data?.insights ?? []} title="Mercado hoje" subtitle="câmbio, cripto e bolsa" className="pt-6" />
         </div>
       )}
     </>
   );
+}
+
+function TileLink({ href, children }: { href: string; children: ReactNode }) {
+  return (
+    <Link href={href} className="inline-flex items-center gap-1 text-2xs font-medium text-ink-3 hover:text-ink">
+      {children} <ArrowRight className="size-3" aria-hidden />
+    </Link>
+  );
+}
+
+function formatMonths(n: number) {
+  const v = Math.round(n * 10) / 10;
+  return `${v.toLocaleString("pt-BR")} ${v === 1 ? "mês" : "meses"}`;
 }

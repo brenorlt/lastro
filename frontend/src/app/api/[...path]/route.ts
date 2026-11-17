@@ -62,3 +62,5 @@ export const PUT = handle;
 export const PATCH = handle;
 export const DELETE = handle;
 export const HEAD = handle;
+// Preflight CORS de clientes MCP/OAuth: quem responde é o backend.
+export const OPTIONS = handle;

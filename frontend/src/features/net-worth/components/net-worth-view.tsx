@@ -172,7 +172,7 @@ export function NetWorthView() {
             />
           </ChartCard>
 
-          <div className="grid gap-4 lg:grid-cols-2 lg:items-start">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
             <GroupList title="Ativos" total={d.assets.total} groups={d.assets.groups} tone="asset" hidden={hidden} actions={itemMenu} />
             <GroupList title="Passivos" total={d.liabilities.total} groups={d.liabilities.groups} tone="liability" hidden={hidden} actions={itemMenu} />
           </div>
