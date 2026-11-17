@@ -37,6 +37,9 @@ export class AuthCleanupService implements OnModuleInit, OnModuleDestroy {
       const tokens = await this.prisma.verificationToken.deleteMany({
         where: { OR: [{ expiresAt: { lt: cutoff } }, { usedAt: { lt: cutoff } }] },
       });
+      // Apps conectados (MCP): códigos e tokens vencidos. Refresh usado fica até vencer (detecção de reuso).
+      await this.prisma.appAuthorizationCode.deleteMany({ where: { expiresAt: { lt: cutoff } } });
+      await this.prisma.appToken.deleteMany({ where: { expiresAt: { lt: cutoff } } });
       if (sessions.count || tokens.count) {
         this.logger.log({ sessions: sessions.count, tokens: tokens.count }, 'Limpeza de auth');
       }

@@ -16,6 +16,7 @@ import { AccountsModule } from './modules/accounts/accounts.module.js';
 import { AdminModule } from './modules/admin/admin.module.js';
 import { BillingModule } from './modules/billing/billing.module.js';
 import { CategoriesModule } from './modules/categories/categories.module.js';
+import { ConnectModule } from './modules/connect/connect.module.js';
 import { AssetsModule } from './modules/assets/assets.module.js';
 import { BudgetsModule } from './modules/budgets/budgets.module.js';
 import { InvestmentsModule } from './modules/investments/investments.module.js';
@@ -76,6 +77,7 @@ import { TransactionsModule } from './modules/transactions/transactions.module.j
     ReportsModule,
     DashboardModule,
     MarketModule,
+    ConnectModule,
   ],
   providers: [
     // Ordem importa: rate limit antes da autenticação, cobrança depois (precisa de request.user).
