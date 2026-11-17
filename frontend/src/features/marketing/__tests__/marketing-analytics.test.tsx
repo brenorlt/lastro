@@ -105,3 +105,26 @@ describe("MarketingAnalytics · section_view", () => {
     expect(track).toHaveBeenCalledExactlyOnceWith("section_view", { section: "planos", section_index: 2 });
   });
 });
+
+describe("MarketingAnalytics · faq_open", () => {
+  beforeEach(() => {
+    vi.stubGlobal("IntersectionObserver", FakeObserver);
+    document.body.innerHTML = "";
+    track.mockClear();
+  });
+
+  it("conta a pergunta aberta no <details>, e não o fechamento", () => {
+    const details = document.createElement("details");
+    details.dataset.faq = "Posso cancelar quando quiser?";
+    document.body.append(details);
+    render(<MarketingAnalytics />);
+
+    details.open = true;
+    details.dispatchEvent(new Event("toggle"));
+    details.open = false;
+    details.dispatchEvent(new Event("toggle"));
+
+    expect(track).toHaveBeenCalledTimes(1);
+    expect(track).toHaveBeenCalledWith("faq_open", { faq_question: "Posso cancelar quando quiser?" });
+  });
+});

@@ -68,7 +68,10 @@
   --shadow-color: 182 37% 22%;
 }
 
-.dark {
+/* .follows-site-theme: elementos montados fora do wrapper da landing (ex.: banner de cookies)
+   que devem herdar o tema escuro dela. */
+.dark,
+.marketing-site ~ .follows-site-theme {
   color-scheme: dark;
 
   --canvas: #17181c;
@@ -329,4 +332,112 @@
   .bg-canvas\/85 {
     background-color: var(--canvas);
   }
+}
+
+/* ───────────── Landing ───────────── */
+
+/* O site institucional é sempre escuro: o fundo atrás da página (overscroll no Mac/iOS) também. */
+:root:has(.marketing-site) {
+  color-scheme: dark;
+  background: #17181c;
+}
+:root:has(.marketing-site) body {
+  background: #17181c;
+}
+
+/* Na landing não há tab bar embaixo: o banner de cookies desce para a borda. */
+@media (max-width: 1023px) {
+  .marketing-site ~ .follows-site-theme {
+    bottom: calc(1rem + env(safe-area-inset-bottom));
+  }
+}
+
+/* Revelação ao rolar só com CSS (scroll-driven animations): zero JS, roda fora da main thread.
+   Navegador sem suporte ou com movimento reduzido vê o conteúdo parado, sem nada escondido. */
+@media (prefers-reduced-motion: no-preference) {
+  @supports (animation-timeline: view()) {
+    .reveal {
+      animation: reveal-up linear both;
+      animation-timeline: view();
+      animation-range: entry 0% entry 55%;
+    }
+  }
+}
+@keyframes reveal-up {
+  from { opacity: 0; transform: translateY(28px); }
+  to { opacity: 1; transform: none; }
+}
+
+/* Faixa infinita: o conteúdo vem duplicado e anda metade da largura. */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+.marquee-track {
+  animation: marquee 40s linear infinite;
+}
+.marquee:hover .marquee-track {
+  animation-play-state: paused;
+}
+.marquee {
+  mask-image: linear-gradient(90deg, transparent, #000 12%, #000 88%, transparent);
+}
+
+/* Cartões flutuando em volta da prévia do produto. */
+@keyframes float-y {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
+}
+.float-slow {
+  animation: float-y 6s var(--ease-in-out) infinite;
+}
+.float-slower {
+  animation: float-y 8s var(--ease-in-out) infinite;
+  animation-delay: -3s;
+}
+
+/* Brilho que passa pelo botão principal: chama o olho sem piscar. */
+@keyframes sheen {
+  0%, 70% { transform: translateX(-120%) skewX(-20deg); }
+  100% { transform: translateX(220%) skewX(-20deg); }
+}
+.cta-sheen {
+  position: relative;
+  overflow: hidden;
+}
+.cta-sheen::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(90deg, transparent, rgb(255 255 255 / 0.22), transparent);
+  animation: sheen 4.5s var(--ease-out) infinite;
+  pointer-events: none;
+}
+
+/* FAQ com <details> nativo: sem JS, abre pelo teclado e pela busca do navegador. */
+.faq-item summary::-webkit-details-marker {
+  display: none;
+}
+.faq-item[open] .faq-chevron {
+  transform: rotate(180deg);
+}
+.faq-item::details-content {
+  block-size: 0;
+  overflow: hidden;
+  transition: block-size 260ms var(--ease-out), content-visibility 260ms allow-discrete;
+}
+.faq-item[open]::details-content {
+  block-size: auto;
+}
+@supports (interpolate-size: allow-keywords) {
+  .faq-list {
+    interpolate-size: allow-keywords;
+  }
+}
+
+/* Seções abaixo da dobra: o navegador pula layout e pintura até chegarem perto da tela. */
+.defer-render {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 900px;
 }

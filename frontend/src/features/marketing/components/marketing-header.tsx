@@ -4,16 +4,16 @@ import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/logo";
-import { buttonVariants } from "@/components/ui/button";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/cn";
 import { SIGNUP_CTA } from "../data";
 
 const LINKS = [
-  { href: "/#problema", label: "O problema" },
-  { href: "/#produto", label: "O produto" },
+  { href: "/#produto", label: "Produto" },
   { href: "/#como-funciona", label: "Como funciona" },
+  { href: "/#comparativo", label: "Comparativo" },
   { href: "/#seguranca", label: "Segurança" },
-  { href: "/#planos", label: "Planos" },
+  { href: "/#planos", label: "Preço" },
   { href: "/#faq", label: "Perguntas" },
 ];
 

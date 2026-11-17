@@ -1,59 +1,81 @@
-import { Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import Link from "next/link";
-import { buttonVariants } from "@/components/ui/button";
-import { Badge } from "@/components/ui/primitives";
+import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/cn";
-import { PLANS, SIGNUP_CTA, TRIAL_DAYS } from "../data";
+import { PLANS, PRICE_PER_DAY, SIGNUP_CTA, TRIAL_DAYS } from "../data";
+import { SectionHeading } from "./section-heading";
 
 export function PricingSection() {
+  const plan = PLANS[0];
   return (
-    <section id="planos" data-section="planos" className="scroll-mt-20 py-20 sm:py-28">
+    <section
+      id="planos"
+      data-section="planos"
+      className="defer-render relative scroll-mt-20 overflow-hidden py-20 sm:py-28"
+    >
+      <div
+        aria-hidden
+        className="bg-accent/10 pointer-events-none absolute top-1/2 left-1/2 -z-10 size-[620px] -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+      />
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
-        <div className="mx-auto max-w-2xl text-center">
-          <p className="text-xs font-medium uppercase tracking-[0.14em] text-ink-3">Plano</p>
-          <h2 className="mt-3 font-display text-3xl leading-tight tracking-[-0.02em] text-ink sm:text-4xl">
-            Um plano. Todos os recursos.
-          </h2>
-          <p className="mt-4 text-ink-2">Sem versões limitadas, sem upgrades escondidos. Sem multa, sem carência.</p>
-        </div>
-        <div className="mx-auto mt-14 flex max-w-md justify-center">
-          {PLANS.map((plan) => (
-            <div
-              key={plan.key}
-              className={cn(
-                "flex w-full flex-col rounded-2xl bg-surface p-7 shadow-sm ring-1 ring-line",
-                plan.featured && "relative ring-2 ring-accent shadow-lg",
-              )}
-            >
-              {plan.featured && <Badge tone="accent" className="absolute -top-3 left-7">{TRIAL_DAYS} dias grátis</Badge>}
-              <h3 className="text-lg font-semibold text-ink">{plan.name}</h3>
-              <p className="mt-1 text-sm text-ink-2">{plan.tagline}</p>
-              <p className="mt-6 flex items-baseline gap-1">
-                <span className="text-sm text-ink-3">R$</span>
-                <span className="num font-display text-4xl tracking-tight text-ink">{plan.monthlyPrice}</span>
-                <span className="text-sm text-ink-3">/mês</span>
+        <SectionHeading
+          eyebrow="Preço"
+          title={
+            <>
+              Menos de R$ 1 por dia. <span className="text-ink-2 italic">Tudo incluso.</span>
+            </>
+          }
+          description="Um plano só, com todos os recursos. Sem versão limitada, sem upgrade escondido, sem fidelidade."
+        />
+
+        <div className="reveal mx-auto mt-14 max-w-4xl">
+          <div className="bg-surface ring-accent/60 grid overflow-hidden rounded-3xl shadow-lg ring-2 md:grid-cols-[1fr_1.15fr]">
+            <div className="border-line flex flex-col p-7 sm:p-9 md:border-r">
+              <span className="bg-accent-soft text-accent w-fit rounded-full px-3 py-1 text-xs font-medium">
+                {TRIAL_DAYS} dias grátis · sem cartão
+              </span>
+              <h3 className="text-ink mt-5 text-xl font-semibold">{plan.name}</h3>
+              <p className="text-ink-2 mt-1 text-sm">{plan.tagline}</p>
+              <p className="mt-7 flex items-baseline gap-1.5">
+                <span className="text-ink-3 text-lg">R$</span>
+                <span className="font-display num text-ink text-7xl leading-none tracking-tight">
+                  {plan.monthlyPrice}
+                </span>
+                <span className="text-ink-3">/mês</span>
               </p>
-              <p className="mt-1 text-sm text-ink-2">depois de {TRIAL_DAYS} dias grátis com tudo liberado</p>
-              <Link
-                href="/cadastro"
-                data-cta="planos"
-                className={buttonVariants({ size: "lg", variant: plan.featured ? "primary" : "secondary", className: "mt-6 w-full" })}
-              >
-                {SIGNUP_CTA}
-              </Link>
-              <p className="mt-3 text-center text-xs text-ink-3">Sem cartão de crédito para começar. Nada é cobrado se você não assinar.</p>
-              <ul className="mt-7 space-y-3 border-t border-line pt-7">
+              <p className="text-ink-2 mt-2 text-sm">
+                São <strong className="text-ink font-medium">{PRICE_PER_DAY} por dia</strong> — menos que um cafezinho
+                para nunca mais perguntar para onde foi o dinheiro.
+              </p>
+              <div className="mt-auto pt-8">
+                <Link
+                  href="/cadastro"
+                  data-cta="planos"
+                  className={cn(buttonVariants({ size: "lg" }), "cta-sheen h-14 w-full text-base")}
+                >
+                  {SIGNUP_CTA} <ArrowRight aria-hidden />
+                </Link>
+                <p className="text-ink-3 mt-3 text-center text-xs">
+                  Nada é cobrado se você não assinar. Depois, Pix, boleto ou cartão.
+                </p>
+              </div>
+            </div>
+            <div className="bg-surface-sunken/50 p-7 sm:p-9">
+              <p className="text-ink text-sm font-medium">Tudo isso, desde o primeiro dia:</p>
+              <ul className="mt-5 grid gap-3 sm:grid-cols-1">
                 {plan.features.map((f) => (
-                  <li key={f} className="flex items-start gap-2.5 text-sm text-ink-2">
-                    <Check className="mt-0.5 size-4 shrink-0 text-positive" aria-hidden />
+                  <li key={f} className="text-ink-2 flex items-start gap-2.5 text-sm">
+                    <Check className="text-positive mt-0.5 size-4 shrink-0" aria-hidden />
                     {f}
                   </li>
                 ))}
               </ul>
             </div>
-          ))}
+          </div>
         </div>
-        <p className="mt-10 text-center text-xs text-ink-3">Preços em reais, cobrança mensal. Impostos podem ser aplicados conforme a legislação vigente.</p>
+        <p className="text-ink-3 mt-8 text-center text-xs">
+          Preços em reais, cobrança mensal. Impostos podem ser aplicados conforme a legislação vigente.
+        </p>
       </div>
     </section>
   );
