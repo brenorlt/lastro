@@ -1,4 +1,3 @@
-# syntax=docker/dockerfile:1.7
 # Lastro API — build multi-stage. Contexto: ./backend (ver docker-compose.yml).
 
 ARG NODE_VERSION=24-alpine
@@ -17,7 +16,7 @@ ARG DATABASE_URL=postgresql://build:build@localhost:5432/build
 ENV DATABASE_URL=${DATABASE_URL}
 COPY package.json package-lock.json prisma.config.ts ./
 COPY prisma ./prisma
-RUN --mount=type=cache,target=/root/.npm npm ci
+RUN npm ci
 
 # ─── build: compila TypeScript e remove devDependencies ─────────────────
 FROM deps AS build
@@ -35,9 +34,9 @@ COPY --from=build --chown=node:node /app/node_modules ./node_modules
 COPY --from=build --chown=node:node /app/dist ./dist
 COPY --from=build --chown=node:node /app/prisma ./prisma
 COPY --from=build --chown=node:node /app/prisma.config.ts ./prisma.config.ts
-# Uploads (avatares). Monte um volume aqui para persistir entre deploys.
+# Uploads (avatares): monte um volume em /app/storage para persistir entre deploys
+# (docker-compose: backend-storage; Railway: volume criado no painel do serviço).
 RUN mkdir -p /app/storage && chown node:node /app/storage
-VOLUME ["/app/storage"]
 USER node
 EXPOSE 3333
 HEALTHCHECK --interval=15s --timeout=5s --start-period=20s --retries=5 \
