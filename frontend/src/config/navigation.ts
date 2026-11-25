@@ -8,6 +8,7 @@ import {
   LayoutGrid,
   LineChart,
   MessagesSquare,
+  SquareTerminal,
   PiggyBank,
   Scale,
   Shapes,
@@ -39,6 +40,7 @@ export type RouteKey =
   | "reports"
   | "notifications"
   | "claude"
+  | "codex"
   | "profile";
 
 export type MobileTab = "home" | "transactions" | "plan" | "wealth" | "reports";
@@ -216,6 +218,16 @@ export const NAV_GROUPS: NavGroup[] = [
         phase: 10,
         tab: "home",
         keywords: ["claude", "ia", "inteligência artificial", "assistente", "chat", "conector", "mcp", "conectar", "integração"],
+      },
+      {
+        key: "codex",
+        label: "Codex",
+        href: "/conectar-codex",
+        icon: SquareTerminal,
+        purpose: "Use o Lastro pelo Codex, da OpenAI: pergunte, registre gastos e acompanhe metas.",
+        phase: 10,
+        tab: "home",
+        keywords: ["codex", "openai", "chatgpt", "ia", "inteligência artificial", "assistente", "conector", "mcp", "conectar", "integração"],
       },
     ],
   },

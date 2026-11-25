@@ -57,7 +57,7 @@ export function configureApp(app: NestExpressApplication): void {
   app.useBodyParser('json', { limit: config.get('BODY_LIMIT') });
   app.useBodyParser('urlencoded', { limit: config.get('BODY_LIMIT'), extended: true });
 
-  // Descoberta OAuth, token e /mcp são chamados por clientes de qualquer origem (Claude,
+  // Descoberta OAuth, token e /mcp são chamados por clientes de qualquer origem (Claude, Codex,
   // inspetores MCP): CORS aberto, sem credenciais. Registrado antes do CORS restrito do app.
   app.use(
     [

@@ -93,7 +93,7 @@ function sendOAuthError(res: Response, error: unknown) {
 }
 
 /**
- * Lastro como servidor de autorização OAuth 2.1 para apps conectados (ex.: Claude via MCP).
+ * Lastro como servidor de autorização OAuth 2.1 para apps conectados (ex.: Claude e Codex via MCP).
  * Descoberta (RFC 8414 / RFC 9728), registro dinâmico (RFC 7591), authorize com consentimento
  * na tela do Lastro, token com PKCE e refresh rotativo, revogação (RFC 7009).
  */
@@ -144,6 +144,7 @@ export class AppOAuthController {
         back.searchParams.set('error', problem.error);
         back.searchParams.set('error_description', problem.description);
         if (query.state) back.searchParams.set('state', query.state);
+        back.searchParams.set('iss', this.oauth.issuer);
         res.redirect(302, back.toString());
         return;
       }

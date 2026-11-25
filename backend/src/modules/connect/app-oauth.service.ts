@@ -72,7 +72,7 @@ export function isAllowedRedirectUri(raw: string): boolean {
 }
 
 /** Loopback: a porta pode variar a cada execução do cliente nativo (RFC 8252 §7.3). */
-function redirectMatches(registered: string, requested: string): boolean {
+export function redirectMatches(registered: string, requested: string): boolean {
   if (registered === requested) return true;
   try {
     const a = new URL(registered);
@@ -137,6 +137,8 @@ export class AppOAuthService {
       token_endpoint_auth_methods_supported: ['none'],
       revocation_endpoint_auth_methods_supported: ['none'],
       scopes_supported: [APP_SCOPE],
+      // RFC 9207: todo retorno ao cliente leva `iss`. O Codex recusa um `iss` não anunciado.
+      authorization_response_iss_parameter_supported: true,
     };
   }
 

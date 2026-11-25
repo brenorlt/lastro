@@ -1,6 +1,11 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { describe, expect, it } from '@jest/globals';
-import { isAllowedRedirectUri, pkceMatches } from './app-oauth.service.js';
+import {
+  AppOAuthService,
+  isAllowedRedirectUri,
+  pkceMatches,
+  redirectMatches,
+} from './app-oauth.service.js';
 import { compact } from './mcp-tools.js';
 
 describe('isAllowedRedirectUri', () => {
@@ -16,6 +21,35 @@ describe('isAllowedRedirectUri', () => {
     expect(isAllowedRedirectUri('https://user:pass@claude.ai/cb')).toBe(false);
     expect(isAllowedRedirectUri('javascript:alert(1)')).toBe(false);
     expect(isAllowedRedirectUri('não é url')).toBe(false);
+  });
+});
+
+describe('redirectMatches', () => {
+  it('loopback aceita qualquer porta no pedido (RFC 8252 §7.3), inclusive registro sem porta (Codex)', () => {
+    expect(redirectMatches('http://127.0.0.1/callback', 'http://127.0.0.1:51234/callback')).toBe(
+      true,
+    );
+    expect(
+      redirectMatches('http://127.0.0.1:4000/callback', 'http://127.0.0.1:51234/callback'),
+    ).toBe(true);
+  });
+
+  it('recusa outro caminho, outro host ou porta diferente fora de loopback', () => {
+    expect(redirectMatches('http://127.0.0.1/callback', 'http://127.0.0.1:5123/outro')).toBe(false);
+    expect(redirectMatches('http://127.0.0.1/callback', 'http://localhost:5123/callback')).toBe(
+      false,
+    );
+    expect(redirectMatches('https://claude.ai/cb', 'https://claude.ai:8443/cb')).toBe(false);
+  });
+});
+
+describe('authorizationServerMetadata', () => {
+  it('anuncia o parâmetro iss (RFC 9207), exigido pelo Codex para aceitar o retorno', () => {
+    const config = { get: () => 'https://lastro.app/' };
+    const service = new AppOAuthService(null as never, config as never, null as never);
+    const meta = service.authorizationServerMetadata();
+    expect(meta.issuer).toBe('https://lastro.app');
+    expect(meta.authorization_response_iss_parameter_supported).toBe(true);
   });
 });
 

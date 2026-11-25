@@ -36,5 +36,6 @@ export const config = {
     "/admin/:path*",
     "/conectar/:path*",
     "/conectar-claude/:path*",
+    "/conectar-codex/:path*",
   ],
 };

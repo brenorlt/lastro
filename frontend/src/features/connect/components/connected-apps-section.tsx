@@ -7,7 +7,7 @@ import { Card } from "@/components/ui/primitives";
 import { SettingsSection } from "@/components/ui/settings-section";
 import { ConnectionsCard } from "./connect-parts";
 
-/** Perfil → Apps conectados: quem tem acesso hoje; o passo a passo fica em /conectar-claude. */
+/** Perfil → Apps conectados: quem tem acesso hoje; o passo a passo fica em /conectar-claude e /conectar-codex. */
 export function ConnectedAppsSection() {
   return (
     <SettingsSection
@@ -21,12 +21,17 @@ export function ConnectedAppsSection() {
             <MessagesSquare className="size-5" aria-hidden />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-ink text-sm font-medium">Use o Lastro conversando com o Claude</p>
+            <p className="text-ink text-sm font-medium">Use o Lastro conversando com o Claude ou o Codex</p>
             <p className="text-ink-2 text-sm">Pergunte, registre gastos e acompanhe metas sem abrir o app.</p>
           </div>
-          <Link href="/conectar-claude" className={buttonVariants({ variant: "secondary", className: "shrink-0" })}>
-            Como conectar <ArrowRight aria-hidden />
-          </Link>
+          <div className="flex shrink-0 flex-wrap gap-2">
+            <Link href="/conectar-claude" className={buttonVariants({ variant: "secondary" })}>
+              Claude <ArrowRight aria-hidden />
+            </Link>
+            <Link href="/conectar-codex" className={buttonVariants({ variant: "secondary" })}>
+              Codex <ArrowRight aria-hidden />
+            </Link>
+          </div>
         </Card>
         <ConnectionsCard />
       </div>

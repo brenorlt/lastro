@@ -65,7 +65,7 @@ export function useDisconnect() {
   });
 }
 
-/** Endereço que a pessoa cola no Claude para adicionar o conector. */
+/** Endereço que a pessoa cola no Claude/Codex para adicionar o conector. */
 export function mcpServerUrl(): string {
   const site = process.env.NEXT_PUBLIC_SITE_URL?.replace(/\/+$/, "");
   const origin = typeof window !== "undefined" ? window.location.origin : site ?? "";
