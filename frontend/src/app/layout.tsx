@@ -5,7 +5,9 @@ import { GoogleAnalytics } from "@/components/analytics/google-analytics";
 import "./globals.css";
 
 const geistSans = Geist({ variable: "--font-geist-sans", subsets: ["latin"], display: "swap" });
-const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap" });
+// Mono aparece em poucos detalhes (códigos, extratos): baixa quando for usada, sem disputar o
+// carregamento inicial com o título.
+const geistMono = Geist_Mono({ variable: "--font-geist-mono", subsets: ["latin"], display: "swap", preload: false });
 const newsreader = Newsreader({
   variable: "--font-newsreader",
   subsets: ["latin"],

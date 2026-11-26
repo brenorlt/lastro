@@ -210,11 +210,28 @@ describe('Auth (e2e)', () => {
       email = (await ctx.createVerifiedUser('refresh')).email;
     });
 
+    it('devolve a assinatura junto com o novo token', async () => {
+      const user = await ctx.createVerifiedUser('refresh-billing');
+      const trialEndsAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+      await ctx.prisma.subscription.create({ data: { userId: user.id, trialEndsAt } });
+      const first = await login(user.email);
+
+      const rotated = await refresh(first.refreshToken);
+      expect(rotated.status).toBe(200);
+      // O app usa isto no lugar de GET /billing/status antes da primeira tela.
+      expect((rotated.body as { data: { billing: unknown } }).data.billing).toMatchObject({
+        status: 'TRIALING',
+        trialEndsAt: trialEndsAt.toISOString(),
+      });
+    });
+
     it('rotaciona; reuso do token antigo revoga a família inteira', async () => {
       const first = await login(email);
 
       const rotated = await refresh(first.refreshToken);
       expect(rotated.status).toBe(200);
+      // Sem assinatura registrada (usuário criado direto no banco), billing vem null e o login segue.
+      expect((rotated.body as { data: { billing: unknown } }).data.billing).toBeNull();
       const newToken = getCookie(rotated, 'lastro_rt')?.value ?? '';
       expect(newToken).not.toBe('');
       expect(newToken).not.toBe(first.refreshToken);

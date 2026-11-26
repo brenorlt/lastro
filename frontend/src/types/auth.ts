@@ -1,3 +1,5 @@
+import type { BillingStatus } from "./billing";
+
 export type ThemePreference = "SYSTEM" | "LIGHT" | "DARK";
 
 export interface NotificationPrefs {
@@ -39,6 +41,8 @@ export interface AuthPayload {
   /** Segundos até expirar. */
   expiresIn: number;
   user: User;
+  /** Assinatura no momento do login/renovação (null se o servidor não conseguiu ler). */
+  billing?: BillingStatus | null;
 }
 
 export interface ActiveSession {

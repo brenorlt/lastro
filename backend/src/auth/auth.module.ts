@@ -1,5 +1,6 @@
 import { Global, Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { BillingModule } from '../modules/billing/billing.module.js';
 import { AuthCleanupService } from './auth-cleanup.service.js';
 import { AuthController } from './auth.controller.js';
 import { AuthService } from './auth.service.js';
@@ -14,7 +15,7 @@ import { AccessTokenService } from './tokens/access-token.service.js';
 /** Autenticação completa (ver README.md). Global para o JwtAuthGuard (APP_GUARD). */
 @Global()
 @Module({
-  imports: [JwtModule.register({})],
+  imports: [JwtModule.register({}), BillingModule],
   controllers: [AuthController, GoogleAuthController],
   providers: [
     AuthService,
