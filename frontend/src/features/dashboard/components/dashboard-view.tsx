@@ -60,6 +60,10 @@ export function DashboardView() {
   const budgets = useBudgets(ym(month));
   const accounts = useAccounts("ACTIVE");
   const d = query.data;
+  // A cascata só roda quando os dados chegam depois do esqueleto. Voltando ao painel com o cache
+  // pronto, ele aparece direto; trocar de mês mantém os dados anteriores e não re-anima.
+  const [reveal, setReveal] = useState(false);
+  if (query.isPending && !reveal) setReveal(true);
   const isCurrentMonth = ym(month) === ym(currentMonth());
 
   const budgetList = budgets.data?.data ?? [];
@@ -116,10 +120,10 @@ export function DashboardView() {
       ) : empty ? (
         <InsightTicker personal={[]} market={market.data?.insights ?? []} title="Mercado hoje" subtitle="câmbio, cripto e bolsa" />
       ) : (
-        <div className={cn("space-y-4 transition-opacity", query.isFetching && "opacity-70")}>
+        <div data-reveal={reveal || undefined} className={cn("space-y-4 transition-opacity", query.isFetching && "opacity-70")}>
           {/* 1. A resposta principal: quanto eu tenho e como está o mês. */}
           <div className="grid gap-10 pb-6 lg:grid-cols-[1.25fr_1fr] lg:items-center">
-            <div data-tour="net-worth">
+            <div data-tour="net-worth" className="reveal-step">
               <NetWorthHero
                 netWorth={d.netWorth.current}
                 hidden={hidden}
@@ -128,14 +132,15 @@ export function DashboardView() {
                 change={d.netWorth.change12m ?? undefined}
               />
             </div>
-            <MonthSummary flow={d.flow} hidden={hidden} isCurrentMonth={isCurrentMonth} />
+            <MonthSummary flow={d.flow} hidden={hidden} isCurrentMonth={isCurrentMonth} className="reveal-step [--step:1]" />
           </div>
 
           {/* 2. Onde o dinheiro está. */}
           <div data-tour="stats" className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-            <StatTile label="Saldo em contas" value={d.cash.available} icon={Wallet} explainer="Soma das contas correntes, digitais, poupança e carteiras incluídas no patrimônio. Não inclui investimentos." footer={<TileLink href="/contas">Ver contas</TileLink>} />
-            <StatTile label="Investimentos" value={d.investments.total} icon={TrendingUp} explainer="Valor atual da sua carteira de investimentos." footer={<TileLink href="/investimentos">Ver carteira</TileLink>} />
+            <StatTile className="reveal-step [--step:2]" label="Saldo em contas" value={d.cash.available} icon={Wallet} explainer="Soma das contas correntes, digitais, poupança e carteiras incluídas no patrimônio. Não inclui investimentos." footer={<TileLink href="/contas">Ver contas</TileLink>} />
+            <StatTile className="reveal-step [--step:3]" label="Investimentos" value={d.investments.total} icon={TrendingUp} explainer="Valor atual da sua carteira de investimentos." footer={<TileLink href="/investimentos">Ver carteira</TileLink>} />
             <StatTile
+              className="reveal-step [--step:4]"
               label="Reserva de emergência"
               value={d.emergencyFund?.current ?? 0}
               icon={Shield}
@@ -154,6 +159,7 @@ export function DashboardView() {
               }
             />
             <StatTile
+              className="reveal-step [--step:5]"
               label="A pagar em 30 dias"
               value={d.commitments.next30Days}
               icon={CalendarClock}
@@ -164,14 +170,14 @@ export function DashboardView() {
 
           {/* 3. O que fazer agora e o que os números dizem. */}
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <AttentionCard items={attentionItems(d, budgetList)} hidden={hidden} />
-            <div data-tour="insights" className="min-w-0">
+            <AttentionCard items={attentionItems(d, budgetList)} hidden={hidden} className="reveal-step [--step:6]" />
+            <div data-tour="insights" className="reveal-step min-w-0 [--step:7]">
               <InsightsCard insights={d.insights} />
             </div>
           </div>
 
           {/* 4. Tendências. */}
-          <div className="grid gap-4 lg:grid-cols-3">
+          <div className="reveal-step grid gap-4 lg:grid-cols-3 [--step:8]">
             <NetWorthChart data={d} />
             <SpendingChart data={d} />
             <CashflowChart data={d} />
@@ -182,7 +188,7 @@ export function DashboardView() {
             </div>
           </div>
 
-          <InsightTicker personal={[]} market={market.data?.insights ?? []} title="Mercado hoje" subtitle="câmbio, cripto e bolsa" className="pt-6" />
+          <InsightTicker personal={[]} market={market.data?.insights ?? []} title="Mercado hoje" subtitle="câmbio, cripto e bolsa" className="reveal-step pt-6 [--step:9]" />
         </div>
       )}
     </>
