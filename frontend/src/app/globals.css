@@ -317,6 +317,18 @@
   animation: tour-pulse 1.8s var(--ease-out) infinite;
 }
 
+/* Entrada em cascata: quando o conteúdo substitui um esqueleto, cada bloco sobe com `rise`,
+   35ms depois do anterior. O contêiner liga com `data-reveal`; cada bloco leva a ordem em `--step`.
+   Só com movimento liberado: a regra de reduced-motion zera a duração, mas não o atraso. */
+@media (prefers-reduced-motion: no-preference) {
+  [data-reveal] .reveal-step {
+    /* `backwards` segura o estado inicial durante o atraso e não deixa transform depois do fim
+       (um transform residual criaria stacking context e prenderia popovers e elementos fixed). */
+    animation: rise 260ms var(--ease-out) backwards;
+    animation-delay: calc(var(--step, 0) * 35ms);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {
     animation-duration: 0.01ms !important;

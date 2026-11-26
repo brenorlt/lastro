@@ -15,7 +15,7 @@ import type { Budget } from "@/types/planning";
 /* ------------------------------------------------------------------ */
 /* Seu mês: entrou, saiu, sobrou — a pergunta que a pessoa abre o app para responder. */
 
-export function MonthSummary({ flow, hidden, isCurrentMonth }: { flow: Dashboard["flow"]; hidden: boolean; isCurrentMonth: boolean }) {
+export function MonthSummary({ flow, hidden, isCurrentMonth, className }: { flow: Dashboard["flow"]; hidden: boolean; isCurrentMonth: boolean; className?: string }) {
   const income = toNumber(flow.income);
   const expense = toNumber(flow.expense);
   const net = income - expense;
@@ -38,7 +38,7 @@ export function MonthSummary({ flow, hidden, isCurrentMonth }: { flow: Dashboard
   ];
 
   return (
-    <Card className="flex flex-col p-5 sm:p-6">
+    <Card className={cn("flex flex-col p-5 sm:p-6", className)}>
       <h2 className="text-sm font-medium text-ink">{isCurrentMonth ? "Seu mês até agora" : "Resumo do mês"}</h2>
       <p className="mt-1 text-sm text-ink-2 [&_strong]:num [&_strong]:font-semibold [&_strong]:text-ink">{verdict}</p>
 
@@ -144,9 +144,9 @@ const toneClass = {
   neutral: "bg-surface-sunken text-ink-2",
 };
 
-export function AttentionCard({ items, hidden }: { items: AttentionItem[]; hidden: boolean }) {
+export function AttentionCard({ items, hidden, className }: { items: AttentionItem[]; hidden: boolean; className?: string }) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader title="Pede sua atenção" description={items.length ? "O que vale resolver primeiro" : undefined} />
       {items.length === 0 ? (
         <div className="flex items-center gap-3 px-5 pb-6 pt-2 sm:px-6">

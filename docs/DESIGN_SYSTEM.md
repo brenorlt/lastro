@@ -98,7 +98,7 @@ zoom e o tamanho de fonte do navegador (200% sem quebra).
 - **Espaço:** base de 4px (4, 8, 12, 16, 20, 24, 32, 40, 48, 64, 80). Cards com 20–24px de padding. Página com 16 / 24 / 40px de gutter.
 - **Raio concêntrico:** `xs 6` · `sm 8` · `md 12` (controles) · `lg 16` · `xl 22` (cards) · `2xl 28`.
 - **Sombras** em camadas, com a cor da superfície (`--shadow-color`). No escuro quase não aparecem: a elevação vem de `surface-raised`.
-- **Movimento:** 150–260ms, `cubic-bezier(.22,1,.36,1)`. Apenas `fade-in`, `rise` e `shimmer`. `prefers-reduced-motion` desliga tudo. Gráficos sem animação de entrada.
+- **Movimento:** 150–260ms, `cubic-bezier(.22,1,.36,1)`. Apenas `fade-in`, `rise` e `shimmer`. `prefers-reduced-motion` desliga tudo. Gráficos sem animação de entrada. Quando o conteúdo substitui um esqueleto, os blocos entram em cascata (`data-reveal` + `.reveal-step` com `--step`, 35ms entre blocos, por seção ou card, nunca por linha de lista); com dados vindos do cache, nada anima.
 - **Breakpoints:** `xs 480` · `sm 640` · `md 768` (tab bar → rail) · `lg 1024` (rail → sidebar) · `xl 1280`. Conteúdo com no máximo 1280px.
 
 ## Componentes
