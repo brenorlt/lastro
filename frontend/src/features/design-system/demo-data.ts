@@ -48,9 +48,11 @@ export const budgets = [
   { category: "Transporte", limit: 1200, used: 540 },
 ];
 
+// Datas ao meio-dia (como as telas do app fazem com datas sem hora): só "2026-09-05" vira meia-noite UTC,
+// que no Brasil ainda é dia 4 — e o servidor (UTC) e o navegador renderizavam dias diferentes.
 export const recentTransactions = [
-  { id: "1", description: "Salário", category: "Salário", account: "Conta principal", date: "2026-09-05", amount: 14200, flow: "income" as const },
-  { id: "2", description: "Aluguel", category: "Moradia", account: "Conta principal", date: "2026-09-10", amount: 3400, flow: "expense" as const },
-  { id: "3", description: "Mercado", category: "Alimentação", account: "Cartão Black", date: "2026-09-18", amount: 412.8, flow: "expense" as const },
-  { id: "4", description: "Rendimento CDB", category: "Rendimentos", account: "Investimentos", date: "2026-09-20", amount: 186.4, flow: "income" as const },
+  { id: "1", description: "Salário", category: "Salário", account: "Conta principal", date: "2026-09-05T12:00:00", amount: 14200, flow: "income" as const },
+  { id: "2", description: "Aluguel", category: "Moradia", account: "Conta principal", date: "2026-09-10T12:00:00", amount: 3400, flow: "expense" as const },
+  { id: "3", description: "Mercado", category: "Alimentação", account: "Cartão Black", date: "2026-09-18T12:00:00", amount: 412.8, flow: "expense" as const },
+  { id: "4", description: "Rendimento CDB", category: "Rendimentos", account: "Investimentos", date: "2026-09-20T12:00:00", amount: 186.4, flow: "income" as const },
 ];
