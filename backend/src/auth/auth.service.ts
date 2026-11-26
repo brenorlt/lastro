@@ -6,6 +6,7 @@ import { AppConfigService } from '../config/app-config.service.js';
 import { PrismaService } from '../database/prisma.service.js';
 import type { Prisma, User } from '../generated/prisma/client.js';
 import type { VerificationTokenType } from '../generated/prisma/enums.js';
+import { BillingService } from '../modules/billing/billing.service.js';
 import { DEFAULT_CATEGORIES } from '../modules/categories/default-categories.js';
 import { MailService } from '../modules/mail/mail.service.js';
 import { EMAIL_VERIFICATION_TTL_MS, PASSWORD_RESET_TTL_MS } from './auth.constants.js';
@@ -76,6 +77,7 @@ export class AuthService {
     private readonly accessTokens: AccessTokenService,
     private readonly events: SecurityEventsService,
     private readonly mail: MailService,
+    private readonly billing: BillingService,
   ) {}
 
   // ─────────────────────────── Cadastro e verificação ───────────────────────────
@@ -507,9 +509,14 @@ export class AuthService {
     refreshToken: string,
     refreshExpiresAt: Date,
   ): Promise<AuthResult> {
-    const { accessToken, expiresIn } = await this.accessTokens.sign(user.id, sessionId);
+    // A assinatura vai junto para o app não precisar de outra ida ao servidor (GET /billing/status)
+    // antes de mostrar a primeira tela. Se falhar, o app busca como antes: não derruba o login.
+    const [{ accessToken, expiresIn }, billing] = await Promise.all([
+      this.accessTokens.sign(user.id, sessionId),
+      this.billing.getStatus(user.id).catch(() => null),
+    ]);
     return {
-      payload: { accessToken, expiresIn, user: toUserDto(user) },
+      payload: { accessToken, expiresIn, user: toUserDto(user), billing },
       refreshToken,
       refreshExpiresAt,
     };

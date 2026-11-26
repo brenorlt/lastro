@@ -1,5 +1,6 @@
 import { type Query, useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { api } from "@/services/api-client";
+import { useAuthStore } from "@/stores/auth-store";
 import type { BillingStatus, BoletoCheckout, HostedCheckout, PixCheckout } from "@/types/billing";
 
 export const billingKeys = { status: ["billing-status"] as const };
@@ -19,6 +20,10 @@ export function useBillingStatus(options?: {
   return useQuery({
     queryKey: billingKeys.status,
     queryFn: async () => (await billingApi.status()).data,
+    // A sessão (login/renovação) já traz a assinatura: a primeira tela não espera outro pedido.
+    // Fica "fresca" pelo staleTime padrão a partir do momento em que chegou.
+    initialData: () => useAuthStore.getState().billing ?? undefined,
+    initialDataUpdatedAt: () => useAuthStore.getState().billingAt ?? undefined,
     refetchInterval: options?.refetchInterval,
   });
 }

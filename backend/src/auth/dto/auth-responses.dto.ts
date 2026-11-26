@@ -1,4 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
+import { BillingStatusDto } from '../../modules/billing/billing.dto.js';
 import { UserDto } from '../../modules/users/dto/user.dto.js';
 
 export { UserDto };
@@ -8,6 +9,12 @@ export class AuthPayloadDto {
   @ApiProperty({ description: 'Validade do access token em segundos', example: 900 })
   expiresIn: number;
   @ApiProperty({ type: UserDto }) user: UserDto;
+  @ApiProperty({
+    type: BillingStatusDto,
+    nullable: true,
+    description: 'Mesmo conteúdo de GET /billing/status (null se não puder ser lido agora)',
+  })
+  billing: BillingStatusDto | null;
 }
 
 export class MessageDto {
