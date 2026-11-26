@@ -26,9 +26,14 @@ export function AnchorScrollFix() {
       // O Chrome não grava a "última altura" (contain-intrinsic-size: auto) enquanto a seção está
       // forçada a visible: sem isto, ao religar o adiamento ela volta aos 900px estimados e o
       // alvo pula centenas de pixels. Fixa a altura medida agora como estimativa de cada uma.
-      for (const el of document.querySelectorAll<HTMLElement>(".defer-render")) {
-        el.style.containIntrinsicSize = `auto ${el.offsetHeight}px`;
-      }
+      // contain-intrinsic-size é o tamanho do conteúdo: padding e borda somam por fora.
+      const sections = Array.from(document.querySelectorAll<HTMLElement>(".defer-render"));
+      const contentHeights = sections.map((el) => {
+        const cs = getComputedStyle(el);
+        const box = ["paddingTop", "paddingBottom", "borderTopWidth", "borderBottomWidth"] as const;
+        return box.reduce((h, prop) => h - parseFloat(cs[prop]), el.offsetHeight);
+      });
+      sections.forEach((el, i) => (el.style.containIntrinsicSize = `auto ${contentHeights[i]}px`));
       delete root.dataset.renderAll;
       window.clearTimeout(timer);
       window.removeEventListener("scroll", onScroll);

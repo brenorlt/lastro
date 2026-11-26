@@ -3,7 +3,6 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { flushSync } from "react-dom";
 import { Logo } from "@/components/brand/logo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/cn";
@@ -21,16 +20,6 @@ const LINKS = [
 
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
-  // Fechar pelo link é instantâneo: com a animação, o menu ainda ocupa altura quando o navegador
-  // calcula o salto para a âncora e, ao encolher, empurra a página centenas de pixels além do alvo.
-  const [animate, setAnimate] = useState(true);
-  // flushSync: o menu precisa sumir do DOM antes de o navegador calcular a rolagem do link.
-  const closeForNavigation = () => {
-    flushSync(() => {
-      setAnimate(false);
-      setOpen(false);
-    });
-  };
 
   useEffect(() => {
     if (!open) return;
@@ -71,10 +60,7 @@ export function MarketingHeader() {
           </Link>
           <button
             type="button"
-            onClick={() => {
-              setAnimate(true);
-              setOpen((v) => !v);
-            }}
+            onClick={() => setOpen((v) => !v)}
             aria-expanded={open}
             aria-controls="menu-principal-mobile"
             aria-label={open ? "Fechar menu" : "Abrir menu"}
@@ -84,32 +70,37 @@ export function MarketingHeader() {
           </button>
         </div>
       </div>
-      {/* grid-rows 0fr→1fr anima até a altura real do conteúdo, sem limite fixo que corte itens. */}
+      {/* O menu flutua sobre a página (absolute) em vez de empurrá-la: abrir e fechar não muda o
+          layout, então o salto para a âncora do link tocado não é deslocado no meio da rolagem.
+          grid-rows 0fr→1fr anima até a altura real do conteúdo, sem limite fixo que corte itens. */}
       <div
         className={cn(
-          "grid lg:hidden",
-          animate && "transition-[grid-template-rows] duration-200 ease-out",
-          open ? "border-line grid-rows-[1fr] border-t" : "grid-rows-[0fr]",
+          "bg-canvas absolute inset-x-0 top-full grid transition-[grid-template-rows] duration-200 ease-out lg:hidden",
+          open ? "border-line grid-rows-[1fr] border-y shadow-lg" : "grid-rows-[0fr]",
         )}
       >
         <div className="min-h-0 overflow-hidden" inert={!open}>
-          <nav id="menu-principal-mobile" aria-label="Principal" className="flex flex-col gap-1 px-5 py-4">
+          <nav
+            id="menu-principal-mobile"
+            aria-label="Principal"
+            className="flex max-h-[calc(100dvh-4rem)] flex-col gap-1 overflow-y-auto px-5 py-4"
+          >
             {LINKS.map((l) => (
               <a
                 key={l.href}
                 href={l.href}
                 data-nav="menu-mobile"
-                onClick={closeForNavigation}
+                onClick={() => setOpen(false)}
                 className="text-ink-2 hover:bg-surface-sunken hover:text-ink rounded-md px-3 py-2.5 text-sm"
               >
                 {l.label}
               </a>
             ))}
             <div className="border-line mt-2 flex flex-col gap-2 border-t pt-4">
-              <Link href="/cadastro" data-cta="menu-mobile" onClick={closeForNavigation} className={buttonVariants()}>
+              <Link href="/cadastro" data-cta="menu-mobile" onClick={() => setOpen(false)} className={buttonVariants()}>
                 {SIGNUP_CTA}
               </Link>
-              <Link href="/entrar" onClick={closeForNavigation} className={buttonVariants({ variant: "secondary" })}>
+              <Link href="/entrar" onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
                 Entrar
               </Link>
             </div>
