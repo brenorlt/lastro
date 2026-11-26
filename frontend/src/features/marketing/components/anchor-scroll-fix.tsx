@@ -13,8 +13,8 @@ const SCROLL_IDLE_MS = 250;
  * alvo: o clique no menu parava centenas de pixels antes ou depois da seção.
  *
  * Correção: no clique (fase de captura, antes da rolagem nativa) ou ao abrir a página já com
- * #âncora, renderiza tudo até a rolagem terminar. Ela é calculada com as alturas reais e, como
- * contain-intrinsic-size usa `auto`, cada seção lembra a altura quando o adiamento volta.
+ * #âncora, renderiza tudo até a rolagem terminar, para ela ser calculada com as alturas reais.
+ * Ao religar o adiamento, cada seção fica com a altura medida como estimativa (ver release).
  */
 export function AnchorScrollFix() {
   useEffect(() => {
@@ -22,6 +22,13 @@ export function AnchorScrollFix() {
     let timer: number | undefined;
 
     const release = () => {
+      if (!("renderAll" in root.dataset)) return;
+      // O Chrome não grava a "última altura" (contain-intrinsic-size: auto) enquanto a seção está
+      // forçada a visible: sem isto, ao religar o adiamento ela volta aos 900px estimados e o
+      // alvo pula centenas de pixels. Fixa a altura medida agora como estimativa de cada uma.
+      for (const el of document.querySelectorAll<HTMLElement>(".defer-render")) {
+        el.style.containIntrinsicSize = `auto ${el.offsetHeight}px`;
+      }
       delete root.dataset.renderAll;
       window.clearTimeout(timer);
       window.removeEventListener("scroll", onScroll);
@@ -56,9 +63,20 @@ export function AnchorScrollFix() {
       initial.scrollIntoView({ behavior: "instant", block: "start" });
     }
 
+    // # trocado sem clique (barra de endereço, voltar/avançar): o navegador já rolou com as
+    // alturas estimadas, então refaz o salto. Num clique, renderAll já está ligado: nada a fazer.
+    const onHashChange = () => {
+      const target = targetOf(location.hash);
+      if (!target || "renderAll" in root.dataset) return;
+      renderAll();
+      target.scrollIntoView({ block: "start" });
+    };
+
     document.addEventListener("click", onClick, { capture: true });
+    window.addEventListener("hashchange", onHashChange);
     return () => {
       document.removeEventListener("click", onClick, { capture: true });
+      window.removeEventListener("hashchange", onHashChange);
       release();
     };
   }, []);
