@@ -415,6 +415,51 @@
   pointer-events: none;
 }
 
+/* Conversa de exemplo da seção de IA: três cenas empilhadas na mesma célula do grid (altura
+   estável) que se revezam a cada 6 s, só com CSS. Com movimento reduzido, fica a primeira parada. */
+.ai-scene:not(:first-child) {
+  visibility: hidden;
+}
+.ai-chip:first-child .ai-chip-on {
+  opacity: 1;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .ai-scene:not(:first-child) {
+    visibility: visible;
+  }
+  .ai-scene > *,
+  .ai-chip-on {
+    animation-duration: 18s;
+    animation-timing-function: linear;
+    animation-iteration-count: infinite;
+    animation-fill-mode: both;
+    animation-delay: var(--ai-delay, 0s);
+  }
+  .ai-scene > .ai-q { animation-name: ai-q; }
+  .ai-scene > .ai-tool { animation-name: ai-tool; }
+  .ai-scene > .ai-a { animation-name: ai-a; }
+  .ai-chip-on { animation-name: ai-chip; }
+}
+@keyframes ai-q {
+  0% { opacity: 0; transform: translateY(8px); }
+  3%, 30% { opacity: 1; transform: none; }
+  33.3%, 100% { opacity: 0; transform: none; }
+}
+@keyframes ai-tool {
+  0%, 6% { opacity: 0; }
+  8%, 30% { opacity: 1; }
+  33.3%, 100% { opacity: 0; }
+}
+@keyframes ai-a {
+  0%, 11% { opacity: 0; transform: translateY(8px); }
+  14%, 30% { opacity: 1; transform: none; }
+  33.3%, 100% { opacity: 0; transform: none; }
+}
+@keyframes ai-chip {
+  0%, 31% { opacity: 1; }
+  33.3%, 100% { opacity: 0; }
+}
+
 /* FAQ com <details> nativo: sem JS, abre pelo teclado e pela busca do navegador. */
 .faq-item summary::-webkit-details-marker {
   display: none;
@@ -440,4 +485,8 @@
 .defer-render {
   content-visibility: auto;
   contain-intrinsic-size: auto 900px;
+}
+/* Durante um salto para âncora, tudo renderiza com a altura real (ver AnchorScrollFix). */
+:root[data-render-all] .defer-render {
+  content-visibility: visible;
 }

@@ -10,6 +10,7 @@ import { SIGNUP_CTA } from "../data";
 
 const LINKS = [
   { href: "/#produto", label: "Produto" },
+  { href: "/#ia", label: "IA" },
   { href: "/#como-funciona", label: "Como funciona" },
   { href: "/#comparativo", label: "Comparativo" },
   { href: "/#seguranca", label: "Segurança" },
@@ -19,6 +20,13 @@ const LINKS = [
 
 export function MarketingHeader() {
   const [open, setOpen] = useState(false);
+  // Fechar pelo link é instantâneo: com a animação, o menu ainda ocupa altura quando o navegador
+  // calcula o salto para a âncora e, ao encolher, empurra a página centenas de pixels além do alvo.
+  const [animate, setAnimate] = useState(true);
+  const closeForNavigation = () => {
+    setAnimate(false);
+    setOpen(false);
+  };
 
   useEffect(() => {
     if (!open) return;
@@ -59,7 +67,10 @@ export function MarketingHeader() {
           </Link>
           <button
             type="button"
-            onClick={() => setOpen((v) => !v)}
+            onClick={() => {
+              setAnimate(true);
+              setOpen((v) => !v);
+            }}
             aria-expanded={open}
             aria-controls="menu-principal-mobile"
             aria-label={open ? "Fechar menu" : "Abrir menu"}
@@ -72,7 +83,8 @@ export function MarketingHeader() {
       {/* grid-rows 0fr→1fr anima até a altura real do conteúdo, sem limite fixo que corte itens. */}
       <div
         className={cn(
-          "grid transition-[grid-template-rows] duration-200 ease-out lg:hidden",
+          "grid lg:hidden",
+          animate && "transition-[grid-template-rows] duration-200 ease-out",
           open ? "border-line grid-rows-[1fr] border-t" : "grid-rows-[0fr]",
         )}
       >
@@ -83,17 +95,17 @@ export function MarketingHeader() {
                 key={l.href}
                 href={l.href}
                 data-nav="menu-mobile"
-                onClick={() => setOpen(false)}
+                onClick={closeForNavigation}
                 className="text-ink-2 hover:bg-surface-sunken hover:text-ink rounded-md px-3 py-2.5 text-sm"
               >
                 {l.label}
               </a>
             ))}
             <div className="border-line mt-2 flex flex-col gap-2 border-t pt-4">
-              <Link href="/cadastro" data-cta="menu-mobile" onClick={() => setOpen(false)} className={buttonVariants()}>
+              <Link href="/cadastro" data-cta="menu-mobile" onClick={closeForNavigation} className={buttonVariants()}>
                 {SIGNUP_CTA}
               </Link>
-              <Link href="/entrar" onClick={() => setOpen(false)} className={buttonVariants({ variant: "secondary" })}>
+              <Link href="/entrar" onClick={closeForNavigation} className={buttonVariants({ variant: "secondary" })}>
                 Entrar
               </Link>
             </div>
