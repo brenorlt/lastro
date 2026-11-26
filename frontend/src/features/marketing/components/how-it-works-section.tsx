@@ -17,7 +17,7 @@ const STEPS: { icon: LucideIcon; title: string; description: string; when: strin
     icon: FileUp,
     title: "Traga sua realidade",
     description:
-      "Cadastre contas e cartões e importe o extrato que você já baixa no app do banco. Recorrências se repetem sozinhas.",
+      "Cadastre contas e cartões, importe o extrato que você já baixa no app do banco ou lance conversando com o Claude ou o Codex. Recorrências se repetem sozinhas.",
     when: "Hoje",
   },
   {

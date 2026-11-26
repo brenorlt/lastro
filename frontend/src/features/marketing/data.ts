@@ -52,6 +52,7 @@ export const PLANS: Plan[] = [
       "Investimentos por classe, com rentabilidade",
       "Patrimônio consolidado: ativos e passivos",
       "Projeções em três cenários",
+      "Conector para Claude e Codex (MCP)",
       "Aplicativo web responsivo",
     ],
   },
@@ -75,6 +76,44 @@ export const STRIP_BANKS = [
   { id: "neon", name: "Neon" },
   { id: "sicoob", name: "Sicoob" },
   { id: "sicredi", name: "Sicredi" },
+] as const;
+
+/**
+ * Conversa de exemplo da seção de IA. Cada cena usa uma ferramenta que existe no conector
+ * (backend/src/modules/connect/mcp-tools.ts) e valores coerentes com as outras prévias da página.
+ */
+export interface AiChatScene {
+  chip: string;
+  question: string;
+  tool: string;
+  answer: string;
+}
+
+export const AI_CHAT_SCENES: AiChatScene[] = [
+  {
+    chip: "Gastos do mês",
+    question: "Quanto gastei com delivery este mês?",
+    tool: "buscar_lancamentos",
+    answer: "R$ 416,30 em 11 pedidos. O maior foi R$ 68,90 no iFood, no dia 14.",
+  },
+  {
+    chip: "Lançar despesa",
+    question: "Lança R$ 48,90 de iFood no cartão Nubank",
+    tool: "criar_lancamento",
+    answer: "Feito: despesa de R$ 48,90 em Delivery, na fatura que fecha dia 28.",
+  },
+  {
+    chip: "Ritmo da meta",
+    question: "Estou no ritmo da meta da viagem?",
+    tool: "ver_metas",
+    answer: "Está. Você já tem R$ 9.680 de R$ 18.000. Guardando R$ 640 por mês, chega lá em dez/2027.",
+  },
+];
+
+/** Apps de IA com guia e teste reais (páginas /conectar-claude e /conectar-codex). Não adicione sem testar. */
+export const AI_CLIENTS = [
+  { name: "Claude", where: "web, desktop e celular" },
+  { name: "Codex", where: "terminal, IDE e app" },
 ] as const;
 
 export interface FaqItem {
@@ -113,6 +152,11 @@ export const FAQS: FaqItem[] = [
       "Não. Baixe o extrato da conta ou a fatura do cartão em OFX ou CSV no app do seu banco e importe no Lastro: ele sugere a categoria de cada lançamento, aponta possíveis duplicatas e nunca importa a mesma linha duas vezes. Você revisa tudo antes de confirmar — e os lançamentos recorrentes e parcelados se repetem sozinhos.",
   },
   {
+    question: "Dá para usar o Lastro pelo Claude ou por outra IA?",
+    answer:
+      "Sim, pelo Claude (web, desktop e celular) e pelo Codex, da OpenAI, com o conector do Lastro (protocolo MCP). Você autoriza o acesso uma vez e desconecta quando quiser em Perfil › Apps conectados. Pela conversa, a IA consulta seus saldos, lançamentos, orçamentos, metas e patrimônio, registra e edita lançamentos, marca contas como pagas e guarda dinheiro nas metas — mas nunca exclui nada, não vê sua senha e não movimenta dinheiro de verdade. O conector está incluído na assinatura; do lado da IA, valem as regras do seu plano no Claude ou na OpenAI.",
+  },
+  {
     question: "O Lastro cobre cartões de crédito de qualquer banco?",
     answer:
       "Sim. Você cadastra o cartão com o dia de fechamento e vencimento reais, e o Lastro organiza compras, parcelas e faturas automaticamente — de qualquer bandeira ou banco.",
@@ -125,7 +169,7 @@ export const FAQS: FaqItem[] = [
   {
     question: "Existe algum recurso que fica de fora do plano?",
     answer:
-      "Não. Por R$ 25/mês você tem acesso a todos os recursos do Lastro: contas, cartões, orçamento, metas, reserva, investimentos, patrimônio, projeções e relatórios — sem versões limitadas ou upgrades escondidos.",
+      "Não. Por R$ 25/mês você tem acesso a todos os recursos do Lastro: contas, cartões, orçamento, metas, reserva, investimentos, patrimônio, projeções, relatórios e o conector para Claude e Codex — sem versões limitadas ou upgrades escondidos.",
   },
 ];
 

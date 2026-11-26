@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { AiConnectorSection } from "@/features/marketing/components/ai-connector-section";
 import { BankStrip } from "@/features/marketing/components/bank-strip";
 import { ComparisonSection } from "@/features/marketing/components/comparison-section";
 import { FaqSection } from "@/features/marketing/components/faq-section";
@@ -12,7 +13,7 @@ import { SecuritySection } from "@/features/marketing/components/security-sectio
 
 const TITLE = "Lastro — Saiba para onde vai cada real";
 const DESCRIPTION =
-  "Contas, cartões, orçamento, metas, reserva, investimentos e patrimônio numa tela só. Importe o extrato de qualquer banco, sem entregar a senha. 7 dias grátis, sem cartão.";
+  "Contas, cartões, orçamento, metas, reserva, investimentos e patrimônio numa tela só. Importe o extrato de qualquer banco, sem entregar a senha, e consulte tudo pelo Claude ou pelo Codex. 7 dias grátis, sem cartão.";
 
 export const metadata: Metadata = {
   title: { absolute: TITLE },
@@ -24,7 +25,7 @@ export const metadata: Metadata = {
 
 /**
  * Ordem pensada para conversão: promessa + prova (hero) → compatibilidade (bancos) → dor →
- * produto → passos → comparação → objeção de segurança → preço → dúvidas → último empurrão.
+ * produto → IA (conector MCP) → passos → comparação → objeção de segurança → preço → dúvidas → último empurrão.
  * Tudo é Server Component; o único JS da página é header, analytics e consentimento.
  */
 export default function HomePage() {
@@ -34,6 +35,7 @@ export default function HomePage() {
       <BankStrip />
       <ProblemSection />
       <FeaturesBento />
+      <AiConnectorSection />
       <HowItWorksSection />
       <ComparisonSection />
       <SecuritySection />

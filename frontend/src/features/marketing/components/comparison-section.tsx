@@ -20,6 +20,12 @@ const ROWS: { label: string; sheet: Cell; bank: Cell; lastro: Cell }[] = [
   { label: "Reserva de emergência com número ideal", sheet: false, bank: false, lastro: true },
   { label: "Patrimônio: ativos menos dívidas", sheet: "Manual", bank: false, lastro: true },
   { label: "Projeções em três cenários", sheet: "Manual", bank: false, lastro: true },
+  {
+    label: "Todas as contas numa conversa com o Claude ou o Codex",
+    sheet: "Copiar e colar",
+    bank: "Só os daquele banco",
+    lastro: true,
+  },
 ];
 
 function Value({ cell, highlight }: { cell: Cell; highlight?: boolean }) {

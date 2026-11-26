@@ -30,13 +30,18 @@ export function HeroSection() {
 
       <div className="mx-auto max-w-6xl px-5 sm:px-8">
         <div className="mx-auto max-w-5xl text-center">
+          {/* Aponta sempre para o lançamento mais recente. */}
           <a
-            href="#produto"
+            href="#ia"
             data-nav="hero-pill"
-            className="animate-rise border-line bg-surface/60 text-ink-2 hover:text-ink hover:border-line-strong inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs backdrop-blur transition-colors"
+            className="animate-rise border-line bg-surface/60 text-ink-2 hover:text-ink hover:border-line-strong inline-flex items-center gap-2 rounded-full border py-1 pr-3 pl-1 text-xs backdrop-blur transition-colors"
           >
-            <Sparkles className="text-brass size-3.5" aria-hidden />
-            Importe o extrato de qualquer banco<span className="hidden sm:inline"> em segundos</span>
+            <span className="bg-accent-soft text-accent inline-flex items-center gap-1 rounded-full px-2 py-0.5 font-medium">
+              <Sparkles className="size-3" aria-hidden />
+              Novo
+            </span>
+            <span className="sm:hidden">Agora no Claude e no Codex</span>
+            <span className="hidden sm:inline">Use o Lastro pelo Claude e pelo Codex</span>
             <ArrowRight className="size-3.5" aria-hidden />
           </a>
 
