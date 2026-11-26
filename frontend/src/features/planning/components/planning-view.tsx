@@ -20,7 +20,7 @@ import { useDebouncedValue } from "@/hooks/use-debounced-value";
 import { cn } from "@/lib/cn";
 import { formatCurrency, toNumber } from "@/lib/format";
 import { userMessage } from "@/services/api-error";
-import { applyScenario, DEFAULT_ASSUMPTIONS, independenceYear, project, SCENARIOS, type Assumptions, type ScenarioKey } from "../projection";
+import { applyScenario, DEFAULT_ASSUMPTIONS, depletionYear, independenceYear, project, SCENARIOS, type Assumptions, type ScenarioKey } from "../projection";
 
 const SCENARIO_COLORS: Record<ScenarioKey, string> = { conservative: "var(--series-2)", base: "var(--series-1)", optimistic: "var(--series-3)" };
 const HORIZONS = [5, 10, 15, 20, 25, 30];
@@ -107,6 +107,7 @@ export function PlanningView() {
   const baseRun = runs[1]!;
   const baseFinal = baseRun.points.at(-1)!;
   const fi = independenceYear(baseRun.points);
+  const baseOut = depletionYear(baseRun.points);
 
   return (
     <>
@@ -146,6 +147,7 @@ export function PlanningView() {
           <ul className="grid gap-3 sm:grid-cols-3">
             {runs.map((r) => {
               const final = r.points.at(-1)!;
+              const out = depletionYear(r.points);
               return (
                 <li key={r.key}>
                   <Card className={cn("p-4", r.key === "base" && "ring-2 ring-accent")}>
@@ -155,6 +157,7 @@ export function PlanningView() {
                     </p>
                     <p className="num mt-1 text-xl font-semibold tracking-tight text-ink">{formatCurrency(value(final), { compact: true })}</p>
                     <p className="text-2xs text-ink-3">em {final.year} · rentab. {applyScenario(a, r.key).annualReturn.toLocaleString("pt-BR")}% a.a.</p>
+                    {out && <p className="mt-1 text-2xs font-medium text-negative">Patrimônio acaba até {out.year}</p>}
                   </Card>
                 </li>
               );
@@ -163,7 +166,11 @@ export function PlanningView() {
 
           <ChartCard
             title="Projeção de patrimônio"
-            takeaway={`No cenário base, cerca de ${formatCurrency(value(baseFinal), { compact: true })} em ${baseFinal.year}${real ? " (em valores de hoje)" : ""}.`}
+            takeaway={
+              baseOut
+                ? `No cenário base, as despesas passam a renda e o patrimônio acaba até ${baseOut.year}. Abaixo de zero, a linha mostra o que faltaria para cobrir as despesas.`
+                : `No cenário base, cerca de ${formatCurrency(value(baseFinal), { compact: true })} em ${baseFinal.year}${real ? " (em valores de hoje)" : ""}.`
+            }
             legend={runs.map((r) => ({ label: r.label, color: SCENARIO_COLORS[r.key], dashed: true }))}
             action={
               <label className="mr-1 flex items-center gap-2 text-xs text-ink-2">
@@ -198,7 +205,11 @@ export function PlanningView() {
               <p className="text-xs text-ink-3">Composição no cenário base</p>
               <div className="mt-3 space-y-2 text-sm">
                 <div className="flex justify-between"><span className="text-ink-2">Patrimônio de hoje</span><span className="num font-medium text-ink">{formatCurrency(base.startWealth)}</span></div>
-                <div className="flex justify-between"><span className="text-ink-2">Aportes no período</span><span className="num font-medium text-ink">{formatCurrency(baseFinal.contributed)}</span></div>
+                <div className="flex justify-between">
+                  {/* Sobra negativa sai do patrimônio: aí não é aporte, é retirada. */}
+                  <span className="text-ink-2">{baseFinal.contributed < 0 ? "Retiradas para cobrir despesas" : "Aportes no período"}</span>
+                  <span className={cn("num font-medium", baseFinal.contributed < 0 ? "text-negative" : "text-ink")}>{formatCurrency(baseFinal.contributed)}</span>
+                </div>
                 <div className="flex justify-between"><span className="text-ink-2">Rendimentos estimados</span><span className="num font-medium text-ink">{formatCurrency(baseFinal.returns)}</span></div>
               </div>
             </Card>

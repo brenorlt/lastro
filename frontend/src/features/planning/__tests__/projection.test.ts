@@ -1,4 +1,4 @@
-import { applyScenario, DEFAULT_ASSUMPTIONS, independenceYear, project } from "../projection";
+import { applyScenario, DEFAULT_ASSUMPTIONS, depletionYear, independenceYear, project } from "../projection";
 
 const base = { startWealth: 100_000, monthlyIncome: 10_000, monthlyExpense: 6_000 };
 
@@ -41,5 +41,21 @@ describe("projection", () => {
     const pts = project({ startWealth: 1_800_000, monthlyIncome: 10_000, monthlyExpense: 6_000 }, { ...DEFAULT_ASSUMPTIONS, horizonYears: 5 });
     expect(independenceYear(pts)?.offset).toBe(1);
     expect(independenceYear(project({ startWealth: 0, monthlyIncome: 1000, monthlyExpense: 1000 }, DEFAULT_ASSUMPTIONS))).toBeNull();
+  });
+
+  it("patrimônio negativo não rende: o déficit se acumula sem a rentabilidade da carteira", () => {
+    const pts = project({ startWealth: 1000, monthlyIncome: 0, monthlyExpense: 2000 }, { ...DEFAULT_ASSUMPTIONS, annualReturn: 12, incomeGrowth: 0, expenseGrowth: 0, horizonYears: 1 }, 2026);
+    const r = Math.pow(1.12, 1 / 12) - 1;
+    // Só o primeiro mês rende (sobre os R$ 1.000); depois disso o saldo já é negativo.
+    expect(pts[1]!.returns).toBeCloseTo(1000 * r, 6);
+    expect(pts[1]!.wealth).toBeCloseTo(1000 * (1 + r) - 24_000, 6);
+  });
+
+  it("depletionYear: primeiro ano em que o patrimônio acaba", () => {
+    const pts = project({ startWealth: 10_000, monthlyIncome: 1000, monthlyExpense: 1500 }, { ...DEFAULT_ASSUMPTIONS, annualReturn: 0, incomeGrowth: 0, expenseGrowth: 0, horizonYears: 5 }, 2026);
+    // −R$ 6.000 por ano: R$ 4.000 no fim do 1º ano, −R$ 2.000 no fim do 2º.
+    expect(depletionYear(pts)?.year).toBe(2028);
+    expect(depletionYear(project(base, DEFAULT_ASSUMPTIONS))).toBeNull();
+    expect(depletionYear(project({ startWealth: -5000, monthlyIncome: 0, monthlyExpense: 100 }, DEFAULT_ASSUMPTIONS))).toBeNull();
   });
 });

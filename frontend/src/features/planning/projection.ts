@@ -4,6 +4,8 @@
  *
  * Mês a mês: patrimônio = patrimônio × (1 + r_mensal) + aporte.
  * Aporte = valor fixo informado, ou (renda − despesa) do ano, que crescem pelas taxas anuais.
+ * Patrimônio zerado ou negativo não rende: abaixo de zero é déficit acumulado, não carteira.
+ * O modelo também não cobra juros sobre ele (não sabe o custo dessa dívida); a tela avisa quando o dinheiro acaba.
  */
 
 export interface Assumptions {
@@ -68,7 +70,7 @@ export function project(baseline: Baseline, a: Assumptions, startYear = new Date
     const expense = baseline.monthlyExpense * Math.pow(1 + a.expenseGrowth / 100, y - 1);
     const contribution = a.monthlyContribution ?? income - expense;
     for (let m = 0; m < 12; m++) {
-      const gain = wealth * r;
+      const gain = wealth > 0 ? wealth * r : 0;
       returns += gain;
       wealth += gain + contribution;
       contributed += contribution;
@@ -98,4 +100,13 @@ export function applyScenario(a: Assumptions, key: ScenarioKey): Assumptions {
  */
 export function independenceYear(points: YearPoint[]): YearPoint | null {
   return points.find((p) => p.offset > 0 && p.wealth > 0 && (p.wealth * 0.04) / 12 >= p.monthlyExpense) ?? null;
+}
+
+/**
+ * Primeiro ano em que o patrimônio, positivo hoje, chega a zero ou fica negativo.
+ * null quando não acaba no horizonte (ou quando já começa zerado: aí não há o que acabar).
+ */
+export function depletionYear(points: YearPoint[]): YearPoint | null {
+  if (!points[0] || points[0].wealth <= 0) return null;
+  return points.find((p) => p.offset > 0 && p.wealth <= 0) ?? null;
 }
