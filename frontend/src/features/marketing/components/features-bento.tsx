@@ -71,7 +71,7 @@ function ImportVisual() {
 function CardVisual() {
   return (
     <div className="mt-6" aria-hidden>
-      <div className="relative overflow-hidden rounded-xl bg-linear-to-br from-[#2b2f3a] to-[#14161b] p-4 text-white shadow-md ring-1 ring-white/10">
+      <div className="relative overflow-hidden rounded-xl bg-linear-to-br from-[#2f5f60] to-[#1b3a3c] p-4 text-white shadow-md ring-1 ring-white/10">
         <div className="flex items-center justify-between text-[11px] text-white/60">
           <span>Fatura atual · fecha dia 28</span>
           <span>•••• 4021</span>

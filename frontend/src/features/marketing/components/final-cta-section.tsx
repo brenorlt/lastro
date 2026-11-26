@@ -10,9 +10,9 @@ export function FinalCtaSection() {
       <div className="reveal bg-surface-sunken ring-line relative mx-auto max-w-6xl overflow-hidden rounded-[2rem] px-6 py-16 text-center ring-1 sm:px-12 sm:py-24">
         <div
           aria-hidden
-          className="from-brass/25 absolute inset-0 bg-radial-[ellipse_at_50%_120%] via-transparent to-transparent"
+          className="from-action/40 absolute inset-0 bg-radial-[ellipse_at_50%_120%] via-transparent to-transparent"
         />
-        <div aria-hidden className="bg-brass/60 absolute inset-x-[20%] bottom-0 h-px" />
+        <div aria-hidden className="bg-accent/50 absolute inset-x-[20%] bottom-0 h-px" />
         <div className="relative mx-auto max-w-3xl">
           <p className="text-brass text-xs font-medium tracking-[0.16em] uppercase">Comece hoje</p>
           <h2 className="font-display text-ink mt-4 text-4xl leading-[1.05] tracking-[-0.02em] sm:text-6xl">
@@ -25,10 +25,7 @@ export function FinalCtaSection() {
             <Link
               href="/cadastro"
               data-cta="cta-final"
-              className={cn(
-                buttonVariants({ size: "lg" }),
-                "cta-sheen h-14 bg-white px-8 text-base text-black hover:bg-white/90",
-              )}
+              className={cn(buttonVariants({ size: "lg" }), "cta-sheen h-14 px-8 text-base")}
             >
               {SIGNUP_CTA} <ArrowRight aria-hidden />
             </Link>

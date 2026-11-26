@@ -6,9 +6,16 @@
  * O tema escuro é um conjunto próprio de valores, não uma inversão do claro.
  */
 
-@custom-variant dark (&:where(.dark, .dark *));
+/* Na landing (.marketing-site, sempre clara) o dark: não vale, mesmo que o <html> esteja no escuro.
+   Não usar uma classe .light genérica: o next-themes põe "light" no <html> e isso desligaria o dark:
+   em painéis .dark do app (ex.: o painel de marca do login). */
+@custom-variant dark (&:where(.dark, .dark *):not(:where(.marketing-site, .marketing-site *)));
 
-:root {
+/* .marketing-site reaplica a paleta clara na landing (sempre clara, mesmo vindo do app no escuro);
+   .follows-site-theme são elementos fora do wrapper dela, como o banner de cookies. */
+:root,
+.marketing-site,
+.marketing-site ~ .follows-site-theme {
   color-scheme: light;
 
   /* Superfícies — tema claro branco + verde */
@@ -68,10 +75,7 @@
   --shadow-color: 182 37% 22%;
 }
 
-/* .follows-site-theme: elementos montados fora do wrapper da landing (ex.: banner de cookies)
-   que devem herdar o tema escuro dela. */
-.dark,
-.marketing-site ~ .follows-site-theme {
+.dark {
   color-scheme: dark;
 
   --canvas: #17181c;
@@ -122,7 +126,8 @@
 }
 
 @media (prefers-contrast: more) {
-  :root {
+  :root,
+  .marketing-site {
     --ink-2: #3a3f52;
     --ink-3: #474d60;
     --line: #aeb7c7;
@@ -336,13 +341,14 @@
 
 /* ───────────── Landing ───────────── */
 
-/* O site institucional é sempre escuro: o fundo atrás da página (overscroll no Mac/iOS) também. */
+/* O site institucional é sempre claro (paleta da marca): o fundo atrás da página (overscroll no
+   Mac/iOS) também, mesmo que o <html> tenha vindo do app no tema escuro. */
 :root:has(.marketing-site) {
-  color-scheme: dark;
-  background: #17181c;
+  color-scheme: light;
+  background: #e2e7f1;
 }
 :root:has(.marketing-site) body {
-  background: #17181c;
+  background: #e2e7f1;
 }
 
 /* Na landing não há tab bar embaixo: o banner de cookies desce para a borda. */
