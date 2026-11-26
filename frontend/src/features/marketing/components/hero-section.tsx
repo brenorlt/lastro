@@ -87,13 +87,13 @@ export function HeroSection() {
       </div>
 
       <div className="relative isolate mx-auto mt-16 max-w-5xl px-5 sm:mt-20 sm:px-8">
-        {/* Sol nascendo: leque de luz ancorado na borda da prévia. */}
+        {/* Sol nascendo: leque de luz lima (a cor de ação da marca) ancorado na borda da prévia. */}
         <div
           aria-hidden
           className="pointer-events-none absolute bottom-full left-1/2 -z-10 h-[240px] w-screen -translate-x-1/2 sm:h-[380px]"
           style={{
             background:
-              "radial-gradient(ellipse 55% 100% at 50% 100%, color-mix(in oklab, var(--brass), transparent 20%) 0%, color-mix(in oklab, var(--brass), transparent 68%) 42%, transparent 78%)",
+              "radial-gradient(ellipse 55% 100% at 50% 100%, color-mix(in oklab, var(--action), transparent 35%) 0%, color-mix(in oklab, var(--action), transparent 80%) 42%, transparent 78%)",
             filter: "blur(36px)",
           }}
         />
