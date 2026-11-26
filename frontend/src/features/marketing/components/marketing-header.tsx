@@ -3,6 +3,7 @@
 import { Menu, X } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { flushSync } from "react-dom";
 import { Logo } from "@/components/brand/logo";
 import { buttonVariants } from "@/components/ui/button-variants";
 import { cn } from "@/lib/cn";
@@ -23,9 +24,12 @@ export function MarketingHeader() {
   // Fechar pelo link é instantâneo: com a animação, o menu ainda ocupa altura quando o navegador
   // calcula o salto para a âncora e, ao encolher, empurra a página centenas de pixels além do alvo.
   const [animate, setAnimate] = useState(true);
+  // flushSync: o menu precisa sumir do DOM antes de o navegador calcular a rolagem do link.
   const closeForNavigation = () => {
-    setAnimate(false);
-    setOpen(false);
+    flushSync(() => {
+      setAnimate(false);
+      setOpen(false);
+    });
   };
 
   useEffect(() => {
